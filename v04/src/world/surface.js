@@ -9,7 +9,9 @@ function sculpt(track,x,z,terrainHeight){
   const r=projectRoad(track,x,z),d=r.distance;
   const blend=1-smooth((d-track.roadHalf)/track.shoulder);
   const crown=.055*(1-Math.min(1,(r.lateral/track.roadHalf)**2));
-  const bumps=.06*Math.sin(x*1.2)*Math.cos(z*.9);
+  // 3 m terrain grid: resolved 9–25 m wavelengths, not aliased 5 m noise.
+  // Small physical gravel ripples make real suspension travel perceptible.
+  const bumps=.12*Math.sin(x*.43+z*.11)*Math.cos(z*.25)+.04*Math.sin((x-z)*.48);
   const roadY=r.y+Math.tan(r.bank)*r.lateral+crown+bumps;
   const height=terrainHeight(x,z)*(1-blend)+roadY*blend;
   const type=d>track.roadHalf+track.shoulder?SURFACES.grass:d>track.roadHalf?SURFACES.shoulder:d>track.roadHalf*.65?SURFACES.loose:SURFACES.compact;

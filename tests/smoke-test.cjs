@@ -17,9 +17,16 @@ for(let i=0;i<12;i++){now+=17;const fn=raf;raf=null;fn(now);}
 assert(window.__gopsRallyDebug.getSnapshot().speed>initial.speed,'car does not accelerate');
 buttons[0].events.click();assert.strictEqual(window.__gopsRallyDebug.getSnapshot().camera,'fixed');
 buttons[2].events.click();assert.strictEqual(window.__gopsRallyDebug.getSnapshot().camera,'chase');
+const heading=window.__gopsRallyDebug.getSnapshot().heading;
 el('right').events.pointerdown({preventDefault:noop,pointerId:1});
 for(let i=0;i<6;i++){now+=17;const fn=raf;raf=null;fn(now);}
 el('right').events.pointerup({preventDefault:noop});
+assert(Math.abs(window.__gopsRallyDebug.getSnapshot().heading-heading)>.03,'steering does not respond');
+const beforeBrake=window.__gopsRallyDebug.getSnapshot().speed;
+el('brake').events.pointerdown({preventDefault:noop,pointerId:2});
+for(let i=0;i<8;i++){now+=17;const fn=raf;raf=null;fn(now);}
+el('brake').events.pointerup({preventDefault:noop});
+assert(window.__gopsRallyDebug.getSnapshot().speed<beforeBrake,'brake does not slow car');
 el('pause').events.click();assert(window.__gopsRallyDebug.getSnapshot().paused);
 assert.strictEqual(exceptions.length,0,exceptions.map(String).join('\n'));
 console.log('Validated: boot, rendering, start, acceleration, steering, cameras, pause', window.__gopsRallyDebug.getSnapshot());

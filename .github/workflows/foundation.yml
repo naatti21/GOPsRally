@@ -26,3 +26,11 @@ jobs:
         with:
           name: foundation-browser-evidence
           path: test-results/
+
+      - name: Package isolated v0.4 browser preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: gops-rally-v04-preview-site
+          path: dist/v04/
+          if-no-files-found: error
+          retention-days: 7

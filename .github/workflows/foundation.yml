@@ -1,0 +1,28 @@
+name: v0.4 foundation checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Real Chromium rendering and offline tests
+        run: |
+          export CHROMIUM_PATH="$(node --input-type=module -e "import {chromium} from '@playwright/test';console.log(chromium.executablePath())")"
+          npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foundation-browser-evidence
+          path: test-results/

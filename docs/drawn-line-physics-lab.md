@@ -27,7 +27,12 @@ any new player-facing Draw Mode. v0.4.4 remains a separate working preview.
   varies the delay before the opposite steering pulse. It reports final
   body slip, yaw, grip, wheel contacts and a provisional catchability flag.
   **No guarantee the car is already catchable**; the experiment is designed
-  to expose that weakness.
+  to expose that weakness. The first real run reached only 1.3 degrees of
+  peak sideslip despite a fast steering pulse, exposing a false-positive
+  "recovery" flag. The revised test requires at least **8 degrees** before
+  any run is even eligible for a caught-slide result. It also supports a
+  reproducible 18-degree seeded chassis slip plus initial yaw rate, applied
+  **once before the run** as a recovery fixture, never as gameplay steering.
 
 Run `npm test` for invariants, or `npm run lab:line` for a JSON comparison.
 

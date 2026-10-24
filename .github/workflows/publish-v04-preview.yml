@@ -13,13 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 1c2ddffd7be295bc052d91a17c3306be88391dda
+          ref: 048cb63fc875e68d8cd0362a83269d6111aecff2
           persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
           cache: npm
-      - name: Verify foundation tests
+      - name: Verify Phase 2 driving tests
         run: npm ci && npm test
       - name: Generate isolated offline preview
         run: npm run build
@@ -40,5 +40,5 @@ jobs:
             echo 'Preview files are already current.'
             exit 0
           fi
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'preview: publish isolated v0.4 terrain inspection site'
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'preview: publish isolated v0.4 playable driving sector'
           git push origin HEAD:main

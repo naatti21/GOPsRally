@@ -1,4 +1,4 @@
-/* GOPs Rally 0.1 — standalone, offline-capable mobile driving feel prototype.
+/* GOPs Rally 0.3 — standalone, offline-capable 3D arcade rally prototype.
  * Rendered with the Canvas 2D API and a custom orthographic 2.5D projector.
  * Height and camber are in the track geometry; production physics/3D are not claimed.
  * No external packages or user accounts. High scores live on this device only.
@@ -411,6 +411,10 @@
   }
   function draw(){
     if(w<1||h<1)return;
+    if(window.GOPsRally3D?.ready){
+      try{window.GOPsRally3D.render(state,track,trees,ground,ROAD_HALF);return;}
+      catch(e){console.error("3D scene error; falling back to Canvas",e);window.GOPsRally3D.ready=false;document.documentElement.classList.remove("webgl-3d");}
+    }
     ctx.setTransform(dpr,0,0,dpr,0,0);
     const cam=camera();
     background(cam);drawRoad(cam);drawSkids(cam);foliage(cam);drawDust(cam);drawCar(cam);

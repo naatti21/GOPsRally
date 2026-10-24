@@ -1,7 +1,7 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Vector3, Quaternion } from "three";
 import { driveIntent } from "../game/contracts.js";
-import { tireGrip, velocityAtWheel, measuredSlip } from "./tire.js";
+import { tireGrip, velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
 export const TUNE = Object.freeze({
   mass: 1200,
   centerOfMassY: -0.1,
@@ -9,9 +9,9 @@ export const TUNE = Object.freeze({
   radius: 0.36,
   rest: 0.48,
   travel: 0.28,
-  stiffness: 38,
-  compression: 4.5,
-  rebound: 5.5,
+  stiffness: 34,
+  compression: 4.1,
+  rebound: 4.8,
   engineForce: 6500,
   brakeForce: 14000,
   drag: 0.42,
@@ -111,9 +111,16 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
           brake: false,
         }
       : driveIntent(input, v, brakeHeld);
-    // Retain speed sensitivity, but preserve enough steering authority for
-    // driver-controlled recovery from a slide at normal rally speeds.
-    steer = intent.steer * (0.48 / (1 + Math.abs(v) / 28));
+    // All correction is at the actual front wheel steering joint. The car's
+    // chassis still rotates only under Rapier tire forces and collisions.
+    const velocityBeforeSteer = body.linvel();
+    const orientationBeforeSteer = body.rotation();
+    const rightBeforeSteer = new Vector3(1, 0, 0).applyQuaternion(orientationBeforeSteer);
+    const bodySideSlip = measuredSlip(
+      rightBeforeSteer.dot(velocityBeforeSteer),
+      v,
+    );
+    steer = responsiveSteering(intent.steer, v, bodySideSlip);
     const engine = enabled
       ? intent.throttle *
         TUNE.engineForce *

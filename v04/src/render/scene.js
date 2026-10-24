@@ -30,6 +30,33 @@ export function createScene(canvas, surface) {
     flatShading: true,
   });
   scene.add(new THREE.Mesh(geometry, material));
+  // Lightweight roadside stakes make the physical gravel corridor readable on mobile.
+  // They follow the same sampled terrain used by the Rapier collider, not a raised road ribbon.
+  const nodes = surface.track.nodes;
+  const markerStep = 9;
+  const stakes = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.18, 0.85, 0.18),
+    new THREE.MeshStandardMaterial({ color: 0xffedbd, roughness: 1 }),
+    Math.ceil(nodes.length / markerStep) * 2,
+  );
+  const stake = new THREE.Object3D();
+  let stakeCount = 0;
+  for (let i = 0; i < nodes.length; i += markerStep) {
+    const node = nodes[i];
+    for (const side of [-1, 1]) {
+      const distance = surface.track.roadHalf + 1.7;
+      const x = node.x + side * node.tz * distance;
+      const z = node.z - side * node.tx * distance;
+      const ground = sampleSurface(surface, x, z);
+      if (!ground) continue;
+      stake.position.set(x, ground.height + 0.425, z);
+      stake.updateMatrix();
+      stakes.setMatrixAt(stakeCount++, stake.matrix);
+    }
+  }
+  stakes.count = stakeCount;
+  stakes.instanceMatrix.needsUpdate = true;
+  scene.add(stakes);
   const chassis = new THREE.Group();
   const box = new THREE.Mesh(
     new THREE.BoxGeometry(1.72, 0.64, 3.8),
@@ -159,17 +186,31 @@ export function createScene(canvas, surface) {
     );
     forward.y = 0;
     forward.normalize();
-    const lead = Math.min(25, Math.abs(pose.speed) * 0.5),
-      target = chassis.position.clone().addScaledVector(forward, lead);
-    const height = 32 + Math.min(20, Math.abs(pose.speed) * 0.4);
-    const offset =
+    const speed = Math.abs(pose.speed);
+    // Chase frames the car and the next bend, instead of aiming far ahead
+    // from a high aerial view that places the car behind the touch buttons.
+    // Fixed is a stable world-azimuth, car-centered high camera.
+    const lookAhead =
       mode === "fixed"
-        ? new THREE.Vector3(0, height, 26)
-        : forward
+        ? Math.min(7, 2 + speed * 0.12)
+        : Math.min(14, 5 + speed * 0.22);
+    const target = chassis.position
+      .clone()
+      .addScaledVector(forward, lookAhead)
+      .add(new THREE.Vector3(0, 1.1, 0));
+    const wanted =
+      mode === "fixed"
+        ? chassis.position.clone().add(new THREE.Vector3(0, 22, 11))
+        : chassis.position
             .clone()
-            .multiplyScalar(-30)
-            .add(new THREE.Vector3(0, height, 0));
-    camera.position.lerp(target.clone().add(offset), 1 - Math.exp(-dt * 8));
+            .addScaledVector(forward, -(10 + Math.min(6, speed * 0.12)))
+            .add(new THREE.Vector3(0, 5.5 + Math.min(3, speed * 0.08), 0));
+    camera.position.lerp(wanted, 1 - Math.exp(-dt * 7));
+    const newFov = mode === "fixed" ? 56 : 62;
+    if (camera.fov !== newFov) {
+      camera.fov = newFov;
+      camera.updateProjectionMatrix();
+    }
     camera.lookAt(target);
   }
   return {
@@ -186,6 +227,11 @@ export function createScene(canvas, surface) {
     },
     setWireframe(value) {
       material.wireframe = value;
+    },
+    carNdc() {
+      camera.updateMatrixWorld();
+      const p = chassis.position.clone().project(camera);
+      return { x: p.x, y: p.y };
     },
     render() {
       renderer.render(scene, camera);

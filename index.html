@@ -1,46 +1,46 @@
 <!doctype html>
-<html lang="fi">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#101b19">
-  <meta name="description" content="GOPs Rally – nopea arcade-rallin ajotuntumaprototyyppi.">
-  <title>GOPs Rally — ajotuntumaprototyyppi</title>
+  <meta name="description" content="GOPs Rally – a responsive, top-down arcade rally driving prototype.">
+  <title>GOPs Rally — Driving Prototype</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <script src="game.js" defer></script>
 </head>
 <body>
-  <canvas id="game" aria-label="GOPs Rally -rallirata"></canvas>
+  <canvas id="game" aria-label="GOPs Rally circuit"></canvas>
   <div class="vignette" aria-hidden="true"></div>
   <header class="hud">
-    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>DRIVING PROTOTYPE / 0.1</small></span></div>
+    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>DRIVING PROTOTYPE / 0.2</small></span></div>
     <div class="times">
-      <div><span class="eyebrow">KIERROS</span><strong id="lap">01</strong></div>
-      <div><span class="eyebrow">AIKA</span><strong id="time">00:00.00</strong></div>
-      <div><span class="eyebrow">PARAS</span><strong id="best">—</strong></div>
+      <div><span class="eyebrow">LAP</span><strong id="lap">01</strong></div>
+      <div><span class="eyebrow">TIME</span><strong id="time">00:00.00</strong></div>
+      <div><span class="eyebrow">BEST</span><strong id="best">—</strong></div>
     </div>
   </header>
-  <section class="status-card" aria-live="polite"><span id="surface" class="surface-pill">SORATIE</span><span id="message">Opettele rata. Aja sitten kovempaa.</span></section>
+  <section class="status-card" aria-live="polite"><span id="surface" class="surface-pill">GRAVEL</span><span id="message">Learn the road. Then find your pace.</span></section>
   <div class="speed"><strong id="speed">0</strong><div><span>KM/H</span><small id="gear">AUTO</small></div></div>
-  <aside class="camera-box"><div class="cam-title">KAMERA</div><div class="camera-switch" role="group" aria-label="Kameratila"><button data-camera="fixed" type="button">LUKITTU</button><button data-camera="hybrid" type="button" class="active">HYBRIDI</button><button data-camera="chase" type="button">CHASE</button></div></aside>
-  <div id="controls" class="controls" aria-label="Auton ohjaus">
-    <button id="left" class="drive-btn steer" aria-label="Käännä vasemmalle" type="button"><span>↶</span><small>VASEN</small></button>
-    <button id="brake" class="drive-btn brake" aria-label="Jarruta" type="button"><span>▮▮</span><small>JARRU</small></button>
-    <button id="right" class="drive-btn steer" aria-label="Käännä oikealle" type="button"><span>↷</span><small>OIKEA</small></button>
+  <aside class="camera-box"><div class="cam-title">CAMERA</div><div class="camera-switch" role="group" aria-label="Kameratila"><button data-camera="fixed" type="button" class="active">FIXED</button><button data-camera="hybrid" type="button">HYBRID</button><button data-camera="chase" type="button">CHASE</button></div></aside>
+  <div id="controls" class="controls" aria-label="Driving controls">
+    <button id="left" class="drive-btn steer" aria-label="Steer left" type="button"><span>↶</span><small>LEFT</small></button>
+    <button id="brake" class="drive-btn brake" aria-label="Brake and reverse" type="button"><span>▮▮</span><small>BRAKE</small></button>
+    <button id="right" class="drive-btn steer" aria-label="Steer right" type="button"><span>↷</span><small>RIGHT</small></button>
   </div>
-  <button id="pause" class="pause-button" type="button" aria-label="Keskeytä tai jatka">Ⅱ</button>
+  <button id="pause" class="pause-button" type="button" aria-label="Pause or resume">Ⅱ</button>
   <button id="recover" class="recover-button" type="button" aria-label="Return car to road" title="Return to road">↺ <small>RESET</small></button>
   <div id="overlay" class="overlay">
     <div class="panel">
-      <span class="kicker">GOPS RALLY / TEST BUILD 0.1</span>
+      <span class="kicker">GOPS RALLY / TEST BUILD 0.2</span>
       <div class="panel-rule"></div>
-      <h1>OPI RATA.<br><em>LÖYDÄ RAJA.</em></h1>
-      <p>Auto kiihdyttää itse. Ohjaa vasemmalle ja oikealle, jarruta tiukkoihin mutkiin. Tien kallistus, korkeus ja pito vaikuttavat ajamiseen.</p>
-      <div class="instruction"><span>↶ &nbsp; ↷</span> OHJAA <i></i><span>▮▮</span> JARRUTA</div>
-      <button id="start" class="start-button" type="button">ALOITA AJO <span>→</span></button>
-      <small>Puhelin: ruudun painikkeet · Tietokone: ← → / A D, jarru välilyönnillä</small>
+      <h1>LEARN THE ROAD.<br><em>FIND THE LIMIT.</em></h1>
+      <p>Throttle is automatic. Steer left and right, brake before tight turns. Road camber, elevation and grip all affect your line.</p>
+      <div class="instruction"><span>↶ &nbsp; ↷</span> STEER <i></i><span>▮▮</span> BRAKE</div>
+      <button id="start" class="start-button" type="button">START DRIVING <span>→</span></button>
+      <small>Phone: touch controls · Computer: ← → / A D, Space to brake. Hold brake at a stop to reverse.</small>
     </div>
   </div>
   <div id="toast" class="toast" role="status"></div>

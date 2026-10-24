@@ -40,3 +40,21 @@ Node-smoke-testin saa ajettua reposta komennolla `node tests/smoke-test.cjs` (ei
 ### Rajaukset
 
 Alkuvaiheen maastografiikka on omaan 2,5D-projektioon perustuva kevyt versio. Korkeudet ja banking on mallinnettu, mutta oikeaa 3D-jousitusta tai törmäysfysiikkaa ei vielä ole. Supabase-kytkentä tehdään vasta, kun yksinpelin käsiteltävyys on testattu.
+
+## v0.2 — ajettavuus ja näkymä
+
+- **English first:** tekstien, painikkeiden ja ilmoitusten oletuskieli on englanti.
+- **Fixed by default:** lukittu ilmansuunta on kameran oletus, Hybrid/Chase ovat edelleen testattavissa.
+- **Maaliviiva:** siirretty neulansilmästä pitkän suoran keskialueelle (rajan ylitys tunnistetaan suunnan ja rataetäisyyden perusteella).
+- **Mobiiliohjaimet:** suuremmat ohjauspainikkeet ja korkeampi sijainti peukalolle.
+- **Näkymä:** selkeämpi yläviisto, kevyesti näkyvä korin kallistus ja jarrutuksen aiheuttama nyökkäys.
+- **Luistojäljet:** sivuttaisluisto jättää renkaanjälkiä, vanha auton soikea varjo on poistettu. Radalla syntyvä pöly säilyy.
+- **Reset / Brake reverse:** v0.1.1:n manuaalinen reset ilman odotusviivettä ja jarrupainikkeella tarkoituksellisesti käytettävä pakki säilyvät.
+
+### Rajaukset ja seuraavat kokeilut
+
+Tässä versiossa kori keinuu yksinkertaisella visuaalisella mallilla. Kyseessä **ei** ole vielä todellinen nelipyöräinen 3D-jousitus- tai painonsiirtosimulaatio. Seuraavassa vaiheessa vertaillaan ajotuntumaa, korkeuserojen vaikutusta sekä eri vetotapoja/painopisteitä ennen uusien automallien lisäämistä.
+
+### Testaus
+
+Aja paikallinen JavaScriptin toimintatesti: `node tests/smoke-test.cjs`. Testi kattaa oletuskameran, englanninkieliset ohjaimet, maaliviivan sijainnin, auton käynnistymisen, ohjauksen, jarrun, kameran vaihdon ja resetin. Mobiililaitteella tehtävä kuvallinen ja käytettävyyden testaus vaatii edelleen pelaajan palautetta.

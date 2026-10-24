@@ -30,6 +30,33 @@ export function createScene(canvas, surface) {
     flatShading: true,
   });
   scene.add(new THREE.Mesh(geometry, material));
+  // Lightweight roadside stakes make the physical gravel corridor readable on mobile.
+  // They follow the same sampled terrain used by the Rapier collider, not a raised road ribbon.
+  const nodes = surface.track.nodes;
+  const markerStep = 9;
+  const stakes = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.18, 0.85, 0.18),
+    new THREE.MeshStandardMaterial({ color: 0xffedbd, roughness: 1 }),
+    Math.ceil(nodes.length / markerStep) * 2,
+  );
+  const stake = new THREE.Object3D();
+  let stakeCount = 0;
+  for (let i = 0; i < nodes.length; i += markerStep) {
+    const node = nodes[i];
+    for (const side of [-1, 1]) {
+      const distance = surface.track.roadHalf + 1.7;
+      const x = node.x + side * node.tz * distance;
+      const z = node.z - side * node.tx * distance;
+      const ground = sampleSurface(surface, x, z);
+      if (!ground) continue;
+      stake.position.set(x, ground.height + 0.425, z);
+      stake.updateMatrix();
+      stakes.setMatrixAt(stakeCount++, stake.matrix);
+    }
+  }
+  stakes.count = stakeCount;
+  stakes.instanceMatrix.needsUpdate = true;
+  scene.add(stakes);
   const chassis = new THREE.Group();
   const box = new THREE.Mesh(
     new THREE.BoxGeometry(1.72, 0.64, 3.8),
@@ -61,7 +88,8 @@ export function createScene(canvas, surface) {
   scene.add(probe);
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 600);
   let mode = "fixed",
-    anchor = null;
+    anchor = null,
+    lastDrivenPose = null;
   const sites = [0, 0.18, 0.31, 0.51, 0.7, 0.61].map(
     (t) => surface.track.nodes[Math.floor(t * surface.track.nodes.length)],
   );
@@ -123,7 +151,8 @@ export function createScene(canvas, surface) {
   observer.observe(canvas);
   resize();
   inspect(0);
-  function drive(pose, dt) {
+  function drive(pose, dt, snapCamera = false) {
+    lastDrivenPose = pose;
     chassis.position.copy(pose.position);
     chassis.quaternion.copy(pose.rotation);
     wheels.forEach((wheel, i) => {
@@ -159,17 +188,32 @@ export function createScene(canvas, surface) {
     );
     forward.y = 0;
     forward.normalize();
-    const lead = Math.min(25, Math.abs(pose.speed) * 0.5),
-      target = chassis.position.clone().addScaledVector(forward, lead);
-    const height = 32 + Math.min(20, Math.abs(pose.speed) * 0.4);
-    const offset =
-      mode === "fixed"
-        ? new THREE.Vector3(0, height, 26)
-        : forward
-            .clone()
-            .multiplyScalar(-30)
-            .add(new THREE.Vector3(0, height, 0));
-    camera.position.lerp(target.clone().add(offset), 1 - Math.exp(-dt * 8));
+    const speed = Math.abs(pose.speed);
+    // Fixed = a zoomed-out, stable compass-facing camera that TRACKS the car.
+    // Do not project the look-at point 7 m ahead of the car: in portrait mode
+    // that moves the vehicle behind the HUD/steering controls or off-screen.
+    // Chase remains the lower, heading-relative driving camera.
+    const fixed = mode === "fixed";
+    const lookAhead = fixed ? 0 : Math.min(14, 5 + speed * 0.22);
+    const target = chassis.position
+      .clone()
+      .addScaledVector(forward, lookAhead)
+      .add(new THREE.Vector3(0, 1.1, 0));
+    const wanted = fixed
+      ? chassis.position.clone().add(new THREE.Vector3(0, 32, 26))
+      : chassis.position
+          .clone()
+          .addScaledVector(forward, -(10 + Math.min(6, speed * 0.12)))
+          .add(new THREE.Vector3(0, 5.5 + Math.min(3, speed * 0.08), 0));
+    camera.position.lerp(
+      wanted,
+      snapCamera ? 1 : 1 - Math.exp(-Math.max(0, dt) * 7),
+    );
+    const newFov = fixed ? 58 : 62;
+    if (camera.fov !== newFov) {
+      camera.fov = newFov;
+      camera.updateProjectionMatrix();
+    }
     camera.lookAt(target);
   }
   return {
@@ -182,10 +226,21 @@ export function createScene(canvas, surface) {
     drive,
     setCamera(value) {
       mode = value;
-      updateCamera();
+      // Switching from Chase to Fixed must never teleport the view to the
+      // stale Phase 1 inspection anchor and then slowly hunt for the car.
+      if (lastDrivenPose) drive(lastDrivenPose, 0, true);
+      else updateCamera();
     },
     setWireframe(value) {
       material.wireframe = value;
+    },
+    carNdc() {
+      camera.updateMatrixWorld();
+      const p = chassis.position.clone().project(camera);
+      return { x: p.x, y: p.y };
+    },
+    cameraDistance() {
+      return camera.position.distanceTo(chassis.position);
     },
     render() {
       renderer.render(scene, camera);

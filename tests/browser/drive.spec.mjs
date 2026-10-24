@@ -1,4 +1,12 @@
 import { test, expect } from "@playwright/test";
+async function assertCarInFrame(page) {
+  const c = await page.evaluate(() => rallyDrive.snapshot().metrics.carNdc);
+  expect(Number.isFinite(c.x) && Number.isFinite(c.y)).toBe(true);
+  expect(Math.abs(c.x)).toBeLessThan(0.72);
+  // NDC y=-0.6 maps to 80% of canvas height: near/under mobile controls.
+  expect(c.y).toBeGreaterThan(-0.60);
+  expect(c.y).toBeLessThan(0.75);
+}
 for (const width of [320, 393])
   test(`playable physics, touch controls, reset and offline ${width}`, async ({
     page,
@@ -24,6 +32,7 @@ for (const width of [320, 393])
         timeout: 12000,
       })
       .toBeGreaterThan(3);
+    await assertCarInFrame(page);
     const before = await page.evaluate(() => rallyDrive.snapshot().position);
     const right = page.locator("[data-drive=right]");
     const box = await right.boundingBox();
@@ -40,6 +49,21 @@ for (const width of [320, 393])
     await expect(
       page.getByRole("button", { name: "Chase", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
+    await assertCarInFrame(page);
+    // Fixed must be meaningfully zoomed out from Chase, keep the car centered,
+    // and never transition via the stale inspector camera at speed.
+    await page.getByRole("button", { name: "Fixed", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Fixed", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await assertCarInFrame(page);
+    const fixed = await page.evaluate(() => rallyDrive.snapshot().metrics);
+    expect(fixed.cameraDistance).toBeGreaterThan(38);
+    expect(fixed.cameraDistance).toBeLessThan(46);
+    expect(Math.abs(fixed.carNdc.x)).toBeLessThan(0.25);
+    expect(Math.abs(fixed.carNdc.y)).toBeLessThan(0.25);
+    await page.getByRole("button", { name: "Chase", exact: true }).click();
+    await assertCarInFrame(page);
     expect(
       await page.evaluate(
         (p) =>
@@ -144,5 +168,6 @@ test("landscape controls, cancellation and configurable start/direction", async 
   expect(
     await page.evaluate(() => rallyDrive.snapshot().metrics.cameraFinite),
   ).toBe(true);
+  await assertCarInFrame(page);
   await page.screenshot({ path: "test-results/drive-landscape.png" });
 });

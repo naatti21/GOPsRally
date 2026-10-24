@@ -117,6 +117,8 @@ async function start() {
       view.setCamera(b.dataset.camera);
     };
   configure();
+  // Until the alternate Fixed angle is validated on-device, start with the known-playable chase view.
+  view.setCamera("chase");
   document.addEventListener("visibilitychange", () => {
     lastTime = performance.now();
     clock.reset();
@@ -213,6 +215,8 @@ async function start() {
         triangles: surface.indices.length / 3,
         drawCalls: view.renderer.info.render.calls,
         cameraFinite: view.camera.matrixWorld.elements.every(Number.isFinite),
+        carNdc: view.carNdc(),
+        cameraDistance: view.cameraDistance(),
       },
       trackLength: surface.track.length,
     }),

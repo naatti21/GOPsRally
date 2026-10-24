@@ -4,24 +4,24 @@ export const COLORS=[[.43,.37,.29],[.53,.45,.34],[.42,.40,.27],[.24,.36,.22]];
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 function terrain(x,z){return 3*Math.sin(x*.025)+4*Math.cos(z*.023)+2*Math.sin((x+z)*.035)}
 // This authoring function runs only while building the authoritative mesh.
-function sculpt(track,x,z){
+function sculpt(track,x,z,terrainHeight){
   const r=projectRoad(track,x,z),d=r.distance;
   const blend=1-smooth((d-track.roadHalf)/track.shoulder);
   const crown=.055*(1-Math.min(1,(r.lateral/track.roadHalf)**2));
   const bumps=.06*Math.sin(x*1.2)*Math.cos(z*.9);
   const roadY=r.y+Math.tan(r.bank)*r.lateral+crown+bumps;
-  const height=terrain(x,z)*(1-blend)+roadY*blend;
+  const height=terrainHeight(x,z)*(1-blend)+roadY*blend;
   const type=d>track.roadHalf+track.shoulder?SURFACES.grass:d>track.roadHalf?SURFACES.shoulder:d>track.roadHalf*.65?SURFACES.loose:SURFACES.compact;
   return {height,type};
 }
-export function buildSurface({step=1.5,size=330,track=makeTrack()}={}){
+export function buildSurface({step=1.5,size=330,track=makeTrack(),terrainHeight=terrain}={}){
   validateTrack(track);
   if(!Number.isFinite(step)||step<.5||!Number.isFinite(size)||size<100)throw Error('Invalid surface resolution');
   if(track.nodes.some(n=>Math.max(Math.abs(n.x),Math.abs(n.z))+track.roadHalf+track.shoulder>=size/2))throw Error('Track corridor outside terrain');
   const cells=Math.ceil(size/step),spacing=size/cells,n=cells+1,min=-size/2;
   const positions=new Float32Array(n*n*3),colors=new Float32Array(n*n*3),types=new Uint8Array(n*n);
   for(let z=0;z<n;z++)for(let x=0;x<n;x++){
-    const i=z*n+x,px=min+x*spacing,pz=min+z*spacing,{height,type}=sculpt(track,px,pz);
+    const i=z*n+x,px=min+x*spacing,pz=min+z*spacing,{height,type}=sculpt(track,px,pz,terrainHeight);
     positions.set([px,height,pz],i*3);colors.set(COLORS[type],i*3);types[i]=type;
   }
   const indices=new Uint32Array(cells*cells*6);

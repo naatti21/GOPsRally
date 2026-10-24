@@ -3,7 +3,7 @@ export const RACE = {
   direction: 1,
   startFraction: 0,
   vehicle_class: "rally-1200",
-  physics_version: "rapier-v04-p2-1",
+  physics_version: "rapier-v04-p2-2",
 };
 export function makeLaps(track, { direction = 1, startFraction = 0 } = {}) {
   if (

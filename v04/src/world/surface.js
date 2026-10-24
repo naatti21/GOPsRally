@@ -1,6 +1,7 @@
 import {makeTrack,projectRoad,validateTrack} from './track.js';
 export const SURFACES={compact:0,loose:1,shoulder:2,grass:3};
-export const COLORS=[[.43,.37,.29],[.53,.45,.34],[.42,.40,.27],[.24,.36,.22]];
+// Clear surface zones for small mobile viewports: gravel, loose gravel, dark shoulder, vegetation.
+export const COLORS=[[.48,.35,.22],[.57,.43,.27],[.30,.29,.22],[.15,.31,.18]];
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 function terrain(x,z){return 3*Math.sin(x*.025)+4*Math.cos(z*.023)+2*Math.sin((x+z)*.035)}
 // This authoring function runs only while building the authoritative mesh.

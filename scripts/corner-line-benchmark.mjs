@@ -94,10 +94,14 @@ export function runCornerTrial({lineId='center',initialSpeedKmh=83,maxSeconds=24
   }finally{world.free();}
 }
 export function runCornerComparison({initialSpeedKmh=83,maxSeconds=24}={}){
-  return {question:'Does wide-late-apex beat a center/early/inside line under identical digital controls?',
+  const laps=LINE_IDS.map(lineId=>runCornerTrial({lineId,initialSpeedKmh,maxSeconds}));
+  const validRanking=laps.filter(x=>x.validFinish).sort((a,b)=>a.elapsedSeconds-b.elapsedSeconds)
+    .map(x=>({lineId:x.lineId,elapsedSeconds:x.elapsedSeconds,exitKmh:x.exitKmh}));
+  return {question:'Which line delivers the fastest VALID 90-degree turn using this exact car and digital driver?',
     geometry:'Common 90 degree right, 13m road, 35m centerline radius; flat ground for isolated physics.',
-    startingSpeedKmh:initialSpeedKmh,
-    laps:LINE_IDS.map(lineId=>runCornerTrial({lineId,initialSpeedKmh,maxSeconds})),
+    startingSpeedKmh:initialSpeedKmh,laps,validRanking,
+    fastestLegal:validRanking[0]?.lineId??null,
+    rejectedCuts:laps.filter(x=>!x.validFinish).map(x=>x.lineId),
     limitation:'Heuristic preset lines, NOT proof of optimality. Physical wheel locations define track cuts, off-road gets grass grip. Virtual bang-bang driver and preset speeds may dominate. Results cannot substitute human play.'};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){

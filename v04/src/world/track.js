@@ -35,14 +35,15 @@ export function validateTrack(track){
     }
   }
 }
-export function projectRoad(track,x,z){
+export function projectRoad(track,x,z,full=false){
   let best=null,d2=Infinity;
   const ns=track.nodes;
-  for(let i=0;i<ns.length;i++){
+  for(const i of (full?null:track.candidates?.(x,z))??ns.keys()){
     const a=ns[i],b=ns[(i+1)%ns.length],dx=b.x-a.x,dz=b.z-a.z;
     const t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz)));
     const px=a.x+t*dx,pz=a.z+t*dz,dist=(x-px)**2+(z-pz)**2;
     if(dist<d2){const len=Math.hypot(dx,dz);d2=dist;best={x:px,z:pz,y:a.y+t*(b.y-a.y),lateral:((x-px)*dz-(z-pz)*dx)/len,bank:a.bank+t*(b.bank-a.bank),distance:Math.sqrt(dist),segment:i,t};}
   }
+  if(!full&&track.candidates&&(!best||best.distance>track.candidateRadius))return projectRoad(track,x,z,true);
   return best;
 }

@@ -1,0 +1,177 @@
+import RAPIER from "@dimforge/rapier3d-compat";
+import { Vector3, Quaternion } from "three";
+import { driveIntent } from "../game/contracts.js";
+export const TUNE = Object.freeze({
+  mass: 1200,
+  centerOfMassY: -0.1,
+  bodyOffsetY: 0.18,
+  radius: 0.36,
+  rest: 0.48,
+  travel: 0.28,
+  stiffness: 38,
+  compression: 4.5,
+  rebound: 5.5,
+  engineForce: 6500,
+  brakeForce: 14000,
+  drag: 0.42,
+  rolling: 150,
+});
+export const WHEELS = [
+  [-0.84, 0.05, -1.3],
+  [0.84, 0.05, -1.3],
+  [-0.84, 0.05, 1.3],
+  [0.84, 0.05, 1.3],
+];
+export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
+  // Box-derived inertia in kg m², with explicit lowered CoM in chassis coordinates.
+  const body = world.createRigidBody(
+    RAPIER.RigidBodyDesc.dynamic()
+      .setCcdEnabled(true)
+      .setCanSleep(false)
+      .setAngularDamping(0.15),
+  );
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(0.86, 0.32, 1.9)
+      .setTranslation(0, TUNE.bodyOffsetY, 0)
+      .setMassProperties(
+        TUNE.mass,
+        { x: 0, y: TUNE.centerOfMassY - TUNE.bodyOffsetY, z: 0 },
+        {
+          x: (TUNE.mass * (0.64 ** 2 + 3.8 ** 2)) / 12,
+          y: (TUNE.mass * (1.72 ** 2 + 3.8 ** 2)) / 12,
+          z: (TUNE.mass * (1.72 ** 2 + 0.64 ** 2)) / 12,
+        },
+        { x: 0, y: 0, z: 0, w: 1 },
+      )
+      .setFriction(0.6)
+      .setRestitution(0.05),
+    body,
+  );
+  // The visible cabin must also collide when the car tumbles; mass stays on the chassis.
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(0.75, 0.275, 0.95)
+      .setTranslation(0, 0.55 + TUNE.bodyOffsetY, 0)
+      .setDensity(0)
+      .setFriction(0.6),
+    body,
+  );
+  const controller = world.createVehicleController(body);
+  controller.indexUpAxis = 1;
+  controller.setIndexForwardAxis = 2;
+  WHEELS.forEach(([x, y, z], i) => {
+    controller.addWheel(
+      { x, y, z },
+      { x: 0, y: -1, z: 0 },
+      { x: 1, y: 0, z: 0 },
+      TUNE.rest,
+      TUNE.radius,
+    );
+    controller.setWheelSuspensionStiffness(i, TUNE.stiffness);
+    controller.setWheelSuspensionCompression(i, TUNE.compression);
+    controller.setWheelSuspensionRelaxation(i, TUNE.rebound);
+    controller.setWheelMaxSuspensionTravel(i, TUNE.travel);
+    controller.setWheelMaxSuspensionForce(i, 18000);
+    controller.setWheelFrictionSlip(i, 1.6);
+    controller.setWheelSideFrictionStiffness(i, 1);
+  });
+  let brakeHeld = 0,
+    steer = 0,
+    reversing = false;
+  const direction = () =>
+    new Vector3(0, 0, -1).applyQuaternion(body.rotation());
+  function speed() {
+    return direction().dot(body.linvel());
+  }
+  function reset(position, heading = 0) {
+    body.setTranslation(position, true);
+    body.setRotation(
+      new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), -heading),
+      true,
+    );
+    body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    body.resetForces(true);
+    body.resetTorques(true);
+    brakeHeld = 0;
+    steer = 0;
+    reversing = false;
+  }
+  function tick(dt, input = {}, enabled = true) {
+    const v = speed();
+    brakeHeld = input.brake && Math.abs(v) < 0.5 ? brakeHeld + dt : 0;
+    if (!input.brake) reversing = false;
+    else if (brakeHeld >= 0.7) reversing = true;
+    const intent = reversing
+      ? {
+          steer: driveIntent(input, v, brakeHeld).steer,
+          throttle: -1,
+          brake: false,
+        }
+      : driveIntent(input, v, brakeHeld);
+    steer = intent.steer * (0.48 / (1 + Math.abs(v) / 22));
+    const engine = enabled
+      ? intent.throttle *
+        TUNE.engineForce *
+        Math.max(0, 1 - Math.abs(v) / (reversing ? 8 : 62))
+      : 0;
+    for (let i = 0; i < 4; i++) {
+      const contact = controller.wheelContactPoint(i);
+      const type = contact ? surfaceAt(contact.x, contact.z) : 0;
+      controller.setWheelFrictionSlip(i, [1.6, 1.25, 0.95, 0.7][type] ?? 0.7);
+      controller.setWheelSteering(i, i < 2 ? -steer : 0);
+      controller.setWheelEngineForce(i, engine / 4);
+      controller.setWheelBrake(
+        i,
+        !enabled || intent.brake ? (TUNE.brakeForce * dt) / 4 : 0,
+      );
+    }
+    // Rapier applies suspension and friction impulses at contacts, including torque/load transfer.
+    controller.updateVehicle(dt, RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC);
+    const velocity = body.linvel(),
+      magnitude = Math.hypot(velocity.x, velocity.y, velocity.z);
+    if (magnitude > 0) {
+      const grounded = Array.from({ length: 4 }, (_, i) =>
+        controller.wheelIsInContact(i),
+      ).some(Boolean);
+      const force =
+        TUNE.drag * magnitude * magnitude + (grounded ? TUNE.rolling : 0);
+      const impulse = Math.min(force * dt, TUNE.mass * magnitude);
+      body.applyImpulse(
+        {
+          x: (-velocity.x / magnitude) * impulse,
+          y: (-velocity.y / magnitude) * impulse,
+          z: (-velocity.z / magnitude) * impulse,
+        },
+        true,
+      );
+    }
+  }
+  function snapshot() {
+    return {
+      position: { ...body.translation() },
+      rotation: { ...body.rotation() },
+      speed: speed(),
+      steer,
+      wheels: WHEELS.map((_, i) => ({
+        contact: controller.wheelIsInContact(i),
+        length: controller.wheelSuspensionLength(i),
+        load: controller.wheelSuspensionForce(i),
+        rotation: controller.wheelRotation(i),
+        steer: controller.wheelSteering(i),
+        sideImpulse: controller.wheelSideImpulse(i),
+      })),
+    };
+  }
+  return {
+    body,
+    controller,
+    reset,
+    tick,
+    speed,
+    snapshot,
+    dispose() {
+      world.removeVehicleController(controller);
+      world.removeRigidBody(body);
+    },
+  };
+}

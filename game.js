@@ -29,6 +29,9 @@
   }
   const track = [];
   const SEGMENTS = COURSE.length * 38;
+  // Midpoint of the long southern approach straight, rather than the first hairpin.
+  const FINISH_IDX = 627;
+  const START_IDX = (FINISH_IDX + 10) % SEGMENTS;
   for (let i=0; i<COURSE.length; i++) {
     const n = COURSE.length;
     const p0=COURSE[(i+n-1)%n], p1=COURSE[i], p2=COURSE[(i+1)%n], p3=COURSE[(i+2)%n];
@@ -80,17 +83,17 @@
   let w=0,h=0,dpr=1,last=performance.now(),toastUntil=0,frameCount=0;
   const savedBest=()=>{try{const s=localStorage.getItem('gopsrally-best-v1');return s?Number(s):null;}catch{return null;}};
   const state={
-    running:false,paused:false,t:0,lap:1,lapT:0,best:savedBest(),camera:'hybrid',
-    x:track[3].x,z:track[3].z,theta:track[3].theta,vx:0,vz:0,steer:0,
-    speed:0,camX:track[3].x,camZ:track[3].z,camY:track[3].y,camYaw:track[3].theta,
-    closest:3,safeIdx:3,offroad:false,progress:3/track.length,dust:[],lapGuard:0
+    running:false,paused:false,t:0,lap:1,lapT:0,best:savedBest(),camera:'fixed',
+    x:track[START_IDX].x,z:track[START_IDX].z,theta:track[START_IDX].theta,vx:0,vz:0,steer:0,
+    speed:0,camX:track[START_IDX].x,camZ:track[START_IDX].z,camY:track[START_IDX].y,camYaw:0,
+    closest:START_IDX,safeIdx:START_IDX,offroad:false,progress:START_IDX/track.length,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0,lapGuard:0
   };
   UI.best.textContent=state.best ? formatTime(state.best) : '—';
   const input={left:false,right:false,brake:false};
 
   function resetCar(){
-    const p=track[3];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:Math.sin(p.theta)*10,vz:Math.cos(p.theta)*10,steer:0,speed:10,
-      camX:p.x,camZ:p.z,camY:p.y,camYaw:p.theta,lap:1,lapT:0,lapGuard:0,closest:3,offroad:false,dust:[]});
+    const p=track[START_IDX];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:Math.sin(p.theta)*10,vz:Math.cos(p.theta)*10,steer:0,speed:10,
+      camX:p.x,camZ:p.z,camY:p.y,camYaw:0,lap:1,lapT:0,lapGuard:0,closest:START_IDX,safeIdx:START_IDX,offroad:false,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0});
   }
   // Manual recovery preserves the current lap and its elapsed time.
   // Use the last safe road sample, never the nearest piece of road off-track.
@@ -100,7 +103,7 @@
     const p=track[idx];
     Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,speed:0,steer:0,
       camX:p.x,camZ:p.z,camY:p.y,camYaw:state.camera==='fixed'?0:p.theta,
-      closest:idx,offroad:false,dust:[]});
+      closest:idx,offroad:false,dust:[],skidClock:0,roll:0,pitch:0,heave:0});
     Object.keys(input).forEach(k=>input[k]=false);
     Object.values(btnMap).forEach(b=>b.classList.remove('pressed'));
     held.clear();
@@ -119,9 +122,9 @@
     return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
   }
   function showToast(text,duration=2){UI.toast.textContent=text;UI.toast.classList.add('show');toastUntil=performance.now()+duration*1000;}
-  function cameraMode(mode){if(!['fixed','hybrid','chase'].includes(mode))return;state.camera=mode;document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));showToast('KAMERA: '+({fixed:'LUKITTU',hybrid:'HYBRIDI',chase:'CHASE'}[mode]),1.1);}
+  function cameraMode(mode){if(!['fixed','hybrid','chase'].includes(mode))return;state.camera=mode;document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));showToast('CAMERA: '+({fixed:'FIXED',hybrid:'HYBRID',chase:'CHASE'}[mode]),1.1);}
   document.querySelectorAll('[data-camera]').forEach(b=>b.addEventListener('click',()=>cameraMode(b.dataset.camera)));
-  function pause(){if(!state.running)return;state.paused=!state.paused;UI.overlay.classList.toggle('hidden',!state.paused);UI.start.innerHTML=state.paused?'JATKA AJOA <span>→</span>':'ALOITA AJO <span>→</span>';UI.pause.textContent=state.paused?'▶':'Ⅱ';Object.keys(input).forEach(k=>input[k]=false);}
+  function pause(){if(!state.running)return;state.paused=!state.paused;UI.overlay.classList.toggle('hidden',!state.paused);UI.start.innerHTML=state.paused?'RESUME DRIVING <span>→</span>':'START DRIVING <span>→</span>';UI.pause.textContent=state.paused?'▶':'Ⅱ';Object.keys(input).forEach(k=>input[k]=false);}
   UI.pause.addEventListener('click',pause);
   $('recover').addEventListener('click',recoverCar);
   UI.start.addEventListener('click',()=>{
@@ -153,7 +156,8 @@
     if(!state.running||state.paused)return;
     dt=Math.min(.045,dt);
     state.t+=dt;state.lapT+=dt;state.lapGuard+=dt;
-    const near=closestRoad(state.x,state.z);
+    const oldX=state.x,oldZ=state.z;
+    const near=closestRoad(oldX,oldZ);
     const road=near.dist<ROAD_HALF+.6;
     state.offroad=!road;
     state.closest=near.idx;
@@ -193,11 +197,22 @@
     state.vx=vx;state.vz=vz;state.x+=vx*dt;state.z+=vz*dt;
     state.speed=length(vx,vz);
     const after=closestRoad(state.x,state.z);
+    // Visual body motion: short-travel, damped arcade suspension. Not full rigid-body dynamics.
+    const bodyEase=1-Math.exp(-dt*9);
+    state.roll=lerp(state.roll,-state.steer*clamp(state.speed/34,0,1)*.17,bodyEase);
+    state.pitch=lerp(state.pitch,(input.brake?-.14:.045)*clamp(state.speed/18,0,1),bodyEase);
+    state.heave=Math.sin(state.t*11)*clamp(state.speed/48,0,1)*.075;
     state.progress=after.idx/track.length;
-    if(state.closest>track.length*.86&&after.idx<track.length*.12&&goingForward>.05&&state.lapGuard>15){
+    const finish=track[FINISH_IDX],fnX=Math.sin(finish.theta),fnZ=Math.cos(finish.theta);
+    const pre=(oldX-finish.x)*fnX+(oldZ-finish.z)*fnZ;
+    const post=(state.x-finish.x)*fnX+(state.z-finish.z)*fnZ;
+    const finishGap=Math.abs(after.idx-FINISH_IDX);
+    const nearFinish=Math.min(finishGap,track.length-finishGap)<10;
+    if(pre<0&&post>=0&&nearFinish&&after.dist<ROAD_HALF+.6&&
+       (vx*fnX+vz*fnZ)>3&&state.lapGuard>15){
       const finished=state.lapT;
-      if(!state.best||finished<state.best){state.best=finished;try{localStorage.setItem('gopsrally-best-v1',String(finished));}catch{}showToast('UUSI ENNÄTYS · '+formatTime(finished),3);}
-      else showToast('KIERROS '+state.lap+' · '+formatTime(finished),3);
+      if(!state.best||finished<state.best){state.best=finished;try{localStorage.setItem('gopsrally-best-v1',String(finished));}catch{}showToast('NEW BEST · '+formatTime(finished),3);}
+      else showToast('LAP '+state.lap+' · '+formatTime(finished),3);
       state.lap++;state.lapT=0;state.lapGuard=0;
     }
     state.closest=after.idx;
@@ -211,6 +226,20 @@
     const camK=1-Math.exp(-dt*5.5);
     state.camX=lerp(state.camX,targetX,camK);state.camZ=lerp(state.camZ,targetZ,camK);
     state.camY=lerp(state.camY,after.at.y,camK);
+    // Skid traces mark actual slip, sampled independently of the render frame rate.
+    state.skidClock+=dt;
+    const slip=Math.abs(vx*Math.cos(state.theta)-vz*Math.sin(state.theta));
+    if(road&&state.speed>15&&slip>3&&state.skidClock>.045){
+      state.skidClock=0;
+      const fx=Math.sin(state.theta),fz=Math.cos(state.theta),rx=Math.cos(state.theta),rz=-Math.sin(state.theta);
+      for(const side of [-1,1]){
+        const sx=state.x-2.3*fx+side*1.62*rx;
+        const sz=state.z-2.3*fz+side*1.62*rz;
+        const y=after.at.y+after.at.bank*after.lateral+.2;
+        state.skids.push({x:sx,z:sz,y,side,t:state.t});
+      }
+    }
+    state.skids=state.skids.filter(p=>state.t-p.t<16).slice(-500);
     if(road&&state.speed>18&&Math.abs(state.steer)>.12&&frameCount%2===0){
       const side=seeded(frameCount*4)*2-1;
       state.dust.push({x:state.x-Math.sin(state.theta)*4+side*2,z:state.z-Math.cos(state.theta)*4,y:after.at.y,life:.8,r:1.4+seeded(frameCount*17)*1.6});
@@ -221,9 +250,9 @@
   function camera(){
     // Scale is deliberately generous: fast driving must still show braking distance.
     const v=clamp(state.speed/56,0,1);
-    const worldHeight=147+v*49;
+    const worldHeight=154+v*54;
     const scale=Math.min(h/worldHeight,w/(worldHeight*(w/h<.82?.54:.64)));
-    return {scale,cx:w*.5,cy:h*.51,yaw:state.camYaw,ct:Math.cos(.29),st:Math.sin(.29),sin:Math.sin(state.camYaw),cos:Math.cos(state.camYaw)};
+    return {scale,cx:w*.5,cy:h*.51,yaw:state.camYaw,ct:Math.cos(.52),st:Math.sin(.52),sin:Math.sin(state.camYaw),cos:Math.cos(state.camYaw)};
   }
   function project(x,z,y,cam){
     const dx=x-state.camX,dz=z-state.camZ;
@@ -286,7 +315,7 @@
       }
     }
     // High contrast checkered start line, attached to the actual road bank.
-    const at=track[0],follow=track[2];
+    const at=track[FINISH_IDX],follow=track[(FINISH_IDX+2)%track.length];
     for(let j=0;j<10;j++){
       const lo=-ROAD_HALF+j*(2*ROAD_HALF/10),hi=lo+2*ROAD_HALF/10;
       const p0=offset(at,lo,.14),p1=offset(at,hi,.14),p2=offset(follow,hi,.14),p3=offset(follow,lo,.14);
@@ -312,23 +341,21 @@
     }
     for(const t of stones){const p=project(t.x,t.z,t.y,cam);if(!visible(p,12))continue;ctx.fillStyle='#918d747a';ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(1,t.r*cam.scale),Math.max(.7,t.r*cam.scale*.55),0,0,PI2);ctx.fill();}
   }
-  function carPolygon(cam,pts,fill,stroke){
+  function carPolygon(cam,pts,fill,stroke,wheel=false){
     const th=state.theta,fx=Math.sin(th),fz=Math.cos(th),rx=Math.cos(th),rz=-Math.sin(th);
-    poly(pts.map(([side,front,height])=>project(state.x+side*rx+front*fx,state.z+side*rz+front*fz,ground(state.x,state.z)+.7+height,cam)),fill,stroke,.7);
+    poly(pts.map(([side,front,height])=>project(state.x+side*rx+front*fx,state.z+side*rz+front*fz,ground(state.x,state.z)+.7+height+(wheel?0:state.roll*side+state.pitch*front+state.heave),cam)),fill,stroke,.7);
   }
   function carSegment(cam,a,b,color,width){
     const th=state.theta,fx=Math.sin(th),fz=Math.cos(th),rx=Math.cos(th),rz=-Math.sin(th);
-    const toP=([side,front,height])=>project(state.x+side*rx+front*fx,state.z+side*rz+front*fz,ground(state.x,state.z)+.7+height,cam);
+    const toP=([side,front,height])=>project(state.x+side*rx+front*fx,state.z+side*rz+front*fz,ground(state.x,state.z)+.7+height+state.roll*side+state.pitch*front+state.heave,cam);
     line(toP(a),toP(b),color,width*cam.scale);
   }
   function drawCar(cam){
     const p=project(state.x,state.z,ground(state.x,state.z)+.35,cam);
     if(!visible(p,65))return;
-    const shadow=project(state.x+2.2,state.z-1.7,ground(state.x,state.z),cam);
-    ctx.fillStyle='#071914a6';ctx.beginPath();ctx.ellipse(shadow.x,shadow.y,6.1*cam.scale,3.5*cam.scale,0,0,PI2);ctx.fill();
     // Four solid rubber wheels; front wheels articulate with steering input.
     for(const side of [-1,1])for(const f of [-2.25,2.25]){
-      carPolygon(cam,[[side*2.32,f-.99,.46],[side*2.32,f+.99,.46],[side*2.32,f+.99,1.24],[side*2.32,f-.99,1.24]],'#151b1a','#070d0b');
+      carPolygon(cam,[[side*2.32,f-.99,.46],[side*2.32,f+.99,.46],[side*2.32,f+.99,1.24],[side*2.32,f-.99,1.24]],'#151b1a','#070d0b',true);
       carSegment(cam,[side*2.5,f-1,.89],[side*2.5,f+1,.89],'#55605a',.12);
     }
     // 3D body sides, main paint and sculpted fenders.
@@ -357,6 +384,17 @@
     carPolygon(cam,[[-2.0,-3.28,1.82],[2.0,-3.28,1.82],[2,-2.9,1.82],[-2,-2.9,1.82]],'#2c342c');
     carSegment(cam,[-2.0,-3.28,1.82],[2,-3.28,1.82],'#f2cc74',.16);
   }
+  function drawSkids(cam){
+    let last={};
+    for(const p of state.skids){
+      const age=state.t-p.t,prev=last[p.side];
+      if(prev&&p.t-prev.t<.22&&length(p.x-prev.x,p.z-prev.z)<12){
+        const a=project(prev.x,prev.z,prev.y,cam),b=project(p.x,p.z,p.y,cam);
+        if(visible(a,30)||visible(b,30))line(a,b,`rgba(59,45,33,${(.32*(1-age/16)).toFixed(3)})`,Math.max(1,cam.scale*.57));
+      }
+      last[p.side]=p;
+    }
+  }
   function drawDust(cam){
     for(const d of state.dust){const p=project(d.x,d.z,d.y,cam);if(!visible(p,50))continue;ctx.fillStyle=`rgba(213,199,158,${Math.max(0,d.life*.19)})`;ctx.beginPath();ctx.ellipse(p.x,p.y,d.r*cam.scale,d.r*cam.scale*.58,0,0,PI2);ctx.fill();}
   }
@@ -364,7 +402,7 @@
     if(w<1||h<1)return;
     ctx.setTransform(dpr,0,0,dpr,0,0);
     const cam=camera();
-    background(cam);drawRoad(cam);foliage(cam);drawDust(cam);drawCar(cam);
+    background(cam);drawRoad(cam);drawSkids(cam);foliage(cam);drawDust(cam);drawCar(cam);
     // Minimal textured haze, no heavyweight postprocessing.
     const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#0b25131a');grad.addColorStop(.7,'#00000000');grad.addColorStop(1,'#05160c30');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
   }
@@ -372,8 +410,8 @@
     UI.time.textContent=formatTime(state.lapT);UI.lap.textContent=String(state.lap).padStart(2,'0');
     UI.speed.textContent=String(Math.round(state.speed*3.6));
     UI.best.textContent=state.best?formatTime(state.best):'—';
-    UI.surface.textContent=state.offroad?'MAASTO':'SORATIE';UI.surface.classList.toggle('offroad',state.offroad);
-    UI.message.textContent=state.offroad?'Takaisin tielle — nyt menetät vauhtia.':state.speed>43?'Katso pitkälle. Ennakoiva ajolinja ratkaisee.':'Opettele rata. Aja sitten kovempaa.';
+    UI.surface.textContent=state.offroad?'OFF ROAD':'GRAVEL';UI.surface.classList.toggle('offroad',state.offroad);
+    UI.message.textContent=state.offroad?'Find the road or use RESET.':state.speed>43?'Look further ahead. The racing line matters.':'Learn the road. Then find your pace.';
   }
   function tick(now){
     try{
@@ -382,11 +420,10 @@
       draw();
       if(frameCount%4===0)updateHud();
       if(now>toastUntil)UI.toast.classList.remove('show');
-    }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Virhe ajossa — avaa konsoli lisätietoihin.';}
+    }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Driving error — check the console.';}
     requestAnimationFrame(tick);
   }
-  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
+  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
   if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline cache unavailable',e)));
   requestAnimationFrame(tick);
 })();
-

@@ -56,6 +56,11 @@ test('all four prescribed lines actually produce measured and comparable outcome
   assert.deepEqual(comparison.laps.map(x=>x.lineId),LINE_IDS);
   assert.ok(comparison.laps.every(x=>x.brakeInCornerFrames===0));
   assert.ok(comparison.laps.every(x=>x.maxRoadOffsetMeters>=0));
+  assert.ok(comparison.laps.every(x=>Number.isFinite(x.maxWheelRoadOffsetMeters)));
+  assert.ok(comparison.laps.every(x=>x.maxWheelRoadOffsetMeters>=x.maxRoadOffsetMeters-1.5));
+  assert.ok(comparison.laps.every(x=>!x.validFinish||x.trackMarginMeters>=0),
+    'wheel cut must invalidate an otherwise fast lap');
+  assert.ok(comparison.laps.every(x=>x.wheelOffRoadSeconds>=x.offRoadSeconds-0.05));
   const times=new Set(comparison.laps.map(x=>x.elapsedSeconds));
   const errors=new Set(comparison.laps.map(x=>x.rmsLineErrorMeters));
   assert.ok(times.size>1||errors.size>1);

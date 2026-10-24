@@ -7,7 +7,7 @@ const buttons=['fixed','hybrid','chase'].map(mode=>{const e=makeElement('cam-'+m
 const document={querySelector:s=>el(s),getElementById:el,querySelectorAll:s=>s==='[data-camera]'?buttons:[],addEventListener:noop,hidden:false};
 const window={innerWidth:400,innerHeight:780,devicePixelRatio:1,addEventListener:noop};
 const sandbox={window,document,navigator:{},location:{protocol:'file:'},performance:{now:()=>now},requestAnimationFrame:f=>raf=f,console:{...console,error:e=>exceptions.push(e)},localStorage:{getItem:()=>null,setItem:noop},Math,Number,Array,String,Map,Set};
-vm.runInNewContext(fs.readFileSync(__dirname+'/game.js','utf8'),sandbox,{filename:'game.js',timeout:20000});
+vm.runInNewContext(fs.readFileSync(__dirname+'/../game.js','utf8'),sandbox,{filename:'game.js',timeout:20000});
 assert(raf,'render loop missing');
 for(let i=0;i<3;i++){now+=17;const fn=raf;raf=null;fn(now);assert(raf,'render loop terminated');}
 assert.strictEqual(window.__gopsRallyDebug.getSnapshot().running,false);

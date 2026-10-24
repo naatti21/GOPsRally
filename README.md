@@ -82,4 +82,4 @@ Testi: `node tests/smoke-test.cjs`. Selain-/puhelintestaus kuuluu edelleen käyt
 
 **Testaus:** `node tests/3d-smoke-test.cjs` validoi 3D-verkkojen kärkipisteiden ja matriisien numeerisuuden, autonosien piirtokutsut sekä Fixed/Chase-kamerat. `node tests/smoke-test.cjs` validoi vanhan ajologiikan. Nämä eivät korvaa oikean WebGL2-selaimen testausta; visuaalisuus ja suorituskyky ovat vielä käyttäjätestissä arvioitavia.
 
-**Seuraava vaihe:** arvioi puhelimella erityisesti näkymän kallistus, auton koko, korkeuserojen luettavuus, renkaiden näkyvyys ja neulansilmän pinta. Jos WebGL2-versiossa on ongelma, tallenna kuvakaappaus sekä kerro kumpi kamera oli valittuna.
+**Hätäpalautus:** jos 3D-näkymä ei toimi puhelimessasi, avaa `https://naatti21.github.io/GOPsRally/?graphics=2d` palataksesi vanhaan 2D-näkymään ilman tiedostopäivitystä.\n\n**Seuraava vaihe:** arvioi puhelimella erityisesti näkymän kallistus, auton koko, korkeuserojen luettavuus, renkaiden näkyvyys ja neulansilmän pinta. Jos WebGL2-versiossa on ongelma, tallenna kuvakaappaus sekä kerro kumpi kamera oli valittuna.

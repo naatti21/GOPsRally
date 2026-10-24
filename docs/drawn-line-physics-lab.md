@@ -33,6 +33,13 @@ any new player-facing Draw Mode. v0.4.4 remains a separate working preview.
   any run is even eligible for a caught-slide result. It also supports a
   reproducible 18-degree seeded chassis slip plus initial yaw rate, applied
   **once before the run** as a recovery fixture, never as gameplay steering.
+  The first seeded 18-degree trials settled even with **NO countersteer**,
+  so 'slip settled' is **not** counted as a player catch. A catch now requires
+  the same initial physics experiment to finish within 5 m laterally **and**
+  reduce drift by over 10 m against the passive no-countersteer baseline.
+  The first measured passive case drifted 29.1 m sideways in three seconds;
+  a 0.15 s countersteer trial drifted only 3.6 m. These are fixed-test
+  metrics, not proof of gamepad drivability.
 
 Run `npm test` for invariants, or `npm run lab:line` for a JSON comparison.
 

@@ -1,0 +1,19 @@
+{
+  "name": "gops-rally-leaderboard-staging",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-10-24",
+  "workers_dev": true,
+  "vars": {
+    "STAGE": "staging",
+    "ENABLE_TEST_WRITES": "true",
+    "ALLOWED_ORIGIN": "https://naatti21.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gops-rally-leaderboard-staging",
+      "database_id": "REPLACE_WITH_DEDICATED_STAGING_D1_ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

@@ -359,7 +359,7 @@
     }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Virhe ajossa — avaa konsoli lisätietoihin.';}
     requestAnimationFrame(tick);
   }
-  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,speed:state.speed,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
+  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,speed:state.speed,heading:state.theta,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
   if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline cache unavailable',e)));
   requestAnimationFrame(tick);
 })();

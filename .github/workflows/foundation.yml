@@ -24,6 +24,15 @@ jobs:
           name: draw-line-physics-metrics
           path: draw-line-report.json
           retention-days: 14
+      - name: Compare equal-start corner lines and exit performance
+        run: |
+          node scripts/corner-line-benchmark.mjs > corner-benchmark.json
+          cat corner-benchmark.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: racing-line-corner-results
+          path: corner-benchmark.json
+          retention-days: 14
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

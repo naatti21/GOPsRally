@@ -1,4 +1,4 @@
-# GOPs Rally — ajotuntumaprototyyppi
+# GOPs Rally — arcade-rallin 3D-prototyyppi
 
 **Työnimi:** GOPs Rally. Tavoite: yksinkertaisesti ohjattava mobiili-arcade-ralli, jossa radan oppiminen palkitaan.
 
@@ -70,3 +70,16 @@ Aja paikallinen JavaScriptin toimintatesti: `node tests/smoke-test.cjs`. Testi k
 - PWA:n offline-välimuistin versio nostettu uudistusten lataamista varten.
 
 Testi: `node tests/smoke-test.cjs`. Selain-/puhelintestaus kuuluu edelleen käyttäjätestiin.
+
+## v0.3 — oikea 3D-renderöinti (koeversio)
+
+- **Uusi `renderer3d.js`:** natiivi WebGL2-renderöinti, ei CDN- tai npm-riippuvuuksia. Mukana oikeasti kolmiulotteinen maaston korkeusverkko, tien kallistukseen mukautuva tien pinta, matalapolygoninen metsä ja autolle 3D-kori sekä neljä erillistä pyörää.
+- **Neulansilmän piirtovirheen korjaussuunta:** tien pinta on nyt yhtenäistä 3D-kolmioverkkoa syvyystestillä vanhan 2D-maalarijärjestyksen sijaan. Tämä ei vielä todista, että kaikki erikoisristeämät ovat virheettömiä; tarkistetaan puhelimella.
+- **Korin liike:** ohjaus ja jarru kallistavat kolmiulotteista koria, maaston erot liikuttavat pyöriä toisistaan riippumatta. Tämä on visualisointi, **ei** aito jousitusdynaamikan / rengasvoimien simulaatio.
+- **Aiempi toimiva ajofysiikka ja ohjaus säilyvät**; 3D on renderöintikerros. Fixed ja Chase, lähtölaskenta, lähtö/maali suoralla ja manuaalinen Reset eivät muutu.
+- **Varmistettu 2D-varatila:** mikäli WebGL2 ei käynnisty tai renderöinti kaatuu, vanha piirto tulee käyttöön.
+- Päivitetty PWA-välimuisti sisältää `renderer3d.js`-tiedoston ja tukee edelleen offline-käyttöä.
+
+**Testaus:** `node tests/3d-smoke-test.cjs` validoi 3D-verkkojen kärkipisteiden ja matriisien numeerisuuden, autonosien piirtokutsut sekä Fixed/Chase-kamerat. `node tests/smoke-test.cjs` validoi vanhan ajologiikan. Nämä eivät korvaa oikean WebGL2-selaimen testausta; visuaalisuus ja suorituskyky ovat vielä käyttäjätestissä arvioitavia.
+
+**Seuraava vaihe:** arvioi puhelimella erityisesti näkymän kallistus, auton koko, korkeuserojen luettavuus, renkaiden näkyvyys ja neulansilmän pinta. Jos WebGL2-versiossa on ongelma, tallenna kuvakaappaus sekä kerro kumpi kamera oli valittuna.

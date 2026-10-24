@@ -1,0 +1,12 @@
+{
+  "name": "GOPs Rally",
+  "short_name": "GOPs Rally",
+  "description": "Ajotuntumaa testaava arcade-ralliprototyyppi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101b19",
+  "theme_color": "#101b19",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

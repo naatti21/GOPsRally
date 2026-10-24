@@ -9,13 +9,15 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+  <script src="renderer3d.js" defer></script>
   <script src="game.js" defer></script>
 </head>
 <body>
+  <canvas id="scene3d" aria-label="3D rally world"></canvas>
   <canvas id="game" aria-label="GOPs Rally circuit"></canvas>
   <div class="vignette" aria-hidden="true"></div>
   <header class="hud">
-    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>DRIVING PROTOTYPE / 0.2.1</small></span></div>
+    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>DRIVING PROTOTYPE / 0.3</small></span></div>
     <div class="times">
       <div><span class="eyebrow">LAP</span><strong id="lap">01</strong></div>
       <div><span class="eyebrow">TIME</span><strong id="time">00:00.00</strong></div>
@@ -34,7 +36,7 @@
   <button id="recover" class="recover-button" type="button" aria-label="Return car to road" title="Return to road">↺ <small>RESET</small></button>
   <div id="overlay" class="overlay">
     <div class="panel">
-      <span class="kicker">GOPS RALLY / TEST BUILD 0.2.1</span>
+      <span class="kicker">GOPS RALLY / TEST BUILD 0.3</span>
       <div class="panel-rule"></div>
       <h1>LEARN THE ROAD.<br><em>FIND THE LIMIT.</em></h1>
       <p>Throttle is automatic. Steer left and right, brake before tight turns. Road camber, elevation and grip all affect your line.</p>

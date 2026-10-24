@@ -213,6 +213,7 @@ async function start() {
         triangles: surface.indices.length / 3,
         drawCalls: view.renderer.info.render.calls,
         cameraFinite: view.camera.matrixWorld.elements.every(Number.isFinite),
+        carNdc: view.carNdc(),
       },
       trackLength: surface.track.length,
     }),

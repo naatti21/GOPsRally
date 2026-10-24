@@ -58,3 +58,15 @@ Tässä versiossa kori keinuu yksinkertaisella visuaalisella mallilla. Kyseessä
 ### Testaus
 
 Aja paikallinen JavaScriptin toimintatesti: `node tests/smoke-test.cjs`. Testi kattaa oletuskameran, englanninkieliset ohjaimet, maaliviivan sijainnin, auton käynnistymisen, ohjauksen, jarrun, kameran vaihdon ja resetin. Mobiililaitteella tehtävä kuvallinen ja käytettävyyden testaus vaatii edelleen pelaajan palautetta.
+
+## v0.2.1 — lähtö ja kamera (24.10.2026)
+
+- Hybrid-kamera poistettu. Valittavat kamerat: **FIXED** (oletus) ja **CHASE**.
+- Lähtöpaikka ja maaliviiva ovat samalla pitkän suoran pisteellä, auto osoittaa radan ajosuuntaan.
+- **START DRIVING** aloittaa kahden sekunnin **2 → 1 → GO!** -laskennan. Auto pysyy paikallaan, kunnes laskenta on päättynyt.
+- Kierrosaika alkaa vasta lähdöstä, joten lähtölaskenta ei maksa kierrosaikaa.
+- Tauolta jatkaminen ei aloita uutta lähtölaskentaa.
+- **RESET** palauttaa välittömästi radalle kuten ennenkin; lähtölaskenta ei koske palautusta.
+- PWA:n offline-välimuistin versio nostettu uudistusten lataamista varten.
+
+Testi: `node tests/smoke-test.cjs`. Selain-/puhelintestaus kuuluu edelleen käyttäjätestiin.

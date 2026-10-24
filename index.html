@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#101b19">
+  <meta name="description" content="GOPs Rally – nopea arcade-rallin ajotuntumaprototyyppi.">
+  <title>GOPs Rally — ajotuntumaprototyyppi</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <canvas id="game" aria-label="GOPs Rally -rallirata"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <header class="hud">
+    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>DRIVING PROTOTYPE / 0.1</small></span></div>
+    <div class="times">
+      <div><span class="eyebrow">KIERROS</span><strong id="lap">01</strong></div>
+      <div><span class="eyebrow">AIKA</span><strong id="time">00:00.00</strong></div>
+      <div><span class="eyebrow">PARAS</span><strong id="best">—</strong></div>
+    </div>
+  </header>
+  <section class="status-card" aria-live="polite"><span id="surface" class="surface-pill">SORATIE</span><span id="message">Opettele rata. Aja sitten kovempaa.</span></section>
+  <div class="speed"><strong id="speed">0</strong><div><span>KM/H</span><small id="gear">AUTO</small></div></div>
+  <aside class="camera-box"><div class="cam-title">KAMERA</div><div class="camera-switch" role="group" aria-label="Kameratila"><button data-camera="fixed" type="button">LUKITTU</button><button data-camera="hybrid" type="button" class="active">HYBRIDI</button><button data-camera="chase" type="button">CHASE</button></div></aside>
+  <div id="controls" class="controls" aria-label="Auton ohjaus">
+    <button id="left" class="drive-btn steer" aria-label="Käännä vasemmalle" type="button"><span>↶</span><small>VASEN</small></button>
+    <button id="brake" class="drive-btn brake" aria-label="Jarruta" type="button"><span>▮▮</span><small>JARRU</small></button>
+    <button id="right" class="drive-btn steer" aria-label="Käännä oikealle" type="button"><span>↷</span><small>OIKEA</small></button>
+  </div>
+  <button id="pause" class="pause-button" type="button" aria-label="Keskeytä tai jatka">Ⅱ</button>
+  <div id="overlay" class="overlay">
+    <div class="panel">
+      <span class="kicker">GOPS RALLY / TEST BUILD 0.1</span>
+      <div class="panel-rule"></div>
+      <h1>OPI RATA.<br><em>LÖYDÄ RAJA.</em></h1>
+      <p>Auto kiihdyttää itse. Ohjaa vasemmalle ja oikealle, jarruta tiukkoihin mutkiin. Tien kallistus, korkeus ja pito vaikuttavat ajamiseen.</p>
+      <div class="instruction"><span>↶ &nbsp; ↷</span> OHJAA <i></i><span>▮▮</span> JARRUTA</div>
+      <button id="start" class="start-button" type="button">ALOITA AJO <span>→</span></button>
+      <small>Puhelin: ruudun painikkeet · Tietokone: ← → / A D, jarru välilyönnillä</small>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+</body>
+</html>

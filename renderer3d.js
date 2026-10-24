@@ -54,12 +54,49 @@ function meshBuilder(){const data=[];
 function gpu(builder,dynamic=false){const vao=gl.createVertexArray(),buf=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(builder.data),dynamic?gl.DYNAMIC_DRAW:gl.STATIC_DRAW);
  const stride=9*4;for(const [idx,offset] of [[loc.pos,0],[loc.normal,12],[loc.color,24]]){gl.enableVertexAttribArray(idx);gl.vertexAttribPointer(idx,3,gl.FLOAT,false,stride,offset);}gl.bindVertexArray(null);return {vao,buf,count:builder.data.length/9};}
 const C={terrain:[.20,.38,.265],terrain2:[.245,.425,.286],road:[.64,.565,.425],road2:[.70,.625,.473],edge:[.40,.345,.263],rut:[.49,.415,.318],stripe:[.97,.94,.78],finish:[.17,.235,.195],car:[.94,.39,.115],hood:[.98,.55,.20],roof:[.97,.89,.70],glass:[.14,.26,.31],rubber:[.055,.07,.065],steel:[.39,.42,.40],trunk:[.25,.18,.12]};
+// The road ribbon and every tyre query MUST use the same piecewise-linear height field.
+// Nearest-segment interpolation resolves the road's longitudinal rise and lateral banking.
+function roadAt(x,z,track){
+ let best=Infinity,out=null;
+ for(let i=0;i<track.length;i++){
+  const a=track[i],b=track[(i+1)%track.length];
+  const dx=b.x-a.x,dz=b.z-a.z,ll=dx*dx+dz*dz;
+  if(ll<1e-8)continue;
+  const t=clamp(((x-a.x)*dx+(z-a.z)*dz)/ll,0,1);
+  const px=a.x+t*dx,pz=a.z+t*dz;
+  const dd=(x-px)*(x-px)+(z-pz)*(z-pz);
+  if(dd>=best)continue;
+  best=dd;
+  const across=((x-px)*dz-(z-pz)*dx)/Math.sqrt(ll);
+  const bank=a.bank+(b.bank-a.bank)*t;
+  out={y:a.y+(b.y-a.y)*t+bank*across,dist:Math.sqrt(dd),across,index:i};
+ }
+ return out;
+}
+function roadSurface(x,z,track,ground,roadHalf){
+ const road=roadAt(x,z,track);
+ if(!road)return ground(x,z);
+ // A blended shoulder prevents a discontinuity when a wheel leaves the road.
+ const q=clamp((road.dist-(roadHalf-1))/7,0,1);
+ const blend=q*q*(3-2*q);
+ return road.y*(1-blend)+ground(x,z)*blend;
+}
+function terrainSurface(x,z,track,ground,roadHalf){
+ const natural=ground(x,z)-.3,road=roadAt(x,z,track);
+ if(!road || road.dist>roadHalf+19)return natural;
+ // Recess the underlying ground mesh, so no grass triangle can break through
+ // the banked road, even on sharp hairpins and elevation changes.
+ const q=clamp((road.dist-(roadHalf+7))/12,0,1),blend=q*q*(3-2*q);
+ return Math.min(natural,road.y-3+blend*30);
+}
 let initialized=false,world=[],body,wheels,groundFn,trackData,carTop=1.6;
 function buildWorld(track,trees,ground,roadHalf){
  groundFn=ground;trackData=track;
- const t=meshBuilder();const step=11,minX=-420,maxX=420,minZ=-395,maxZ=355;
+ const t=meshBuilder();const step=7,minX=-420,maxX=420,minZ=-395,maxZ=355;
+ const heightCache=new Map();
+ const terr=(x,z)=>{const key=x+','+z;let y=heightCache.get(key);if(y===undefined){y=terrainSurface(x,z,track,ground,roadHalf);heightCache.set(key,y);}return y;};
  for(let x=minX;x<maxX;x+=step)for(let z=minZ;z<maxZ;z+=step){
- const a=[x,ground(x,z)-.3,z],b=[x+step,ground(x+step,z)-.3,z],c=[x+step,ground(x+step,z+step)-.3,z+step],d=[x,ground(x,z+step)-.3,z+step];
+ const a=[x,terr(x,z),z],b=[x+step,terr(x+step,z),z],c=[x+step,terr(x+step,z+step),z+step],d=[x,terr(x,z+step),z+step];
  const color=((Math.floor(x/step)+Math.floor(z/step))&1)?C.terrain:C.terrain2;t.quad(a,b,c,d,color);
  }world.push(gpu(t));
  const strip=meshBuilder();const len=track.length;
@@ -126,7 +163,10 @@ function render(state,track,trees,ground,roadHalf){
  gl.clearColor(.17,.28,.21,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  const speed=clamp(state.speed/55,0,1),span=178+speed*55,aspect=W/H;
  const projection=ortho(-span*aspect*.5,span*aspect*.5,-span*.5,span*.5,5,850);
- const baseY=ground(state.camX,state.camZ),target=[state.camX,baseY,state.camZ];
+ // This orbit's lookAt basis points camera-right toward world -X.
+ // Mirror X so screen-right agrees with car-right in the established 2D physics.
+ projection[0]*=-1;
+ const baseY=roadSurface(state.camX,state.camZ,track,ground,roadHalf),target=[state.camX,baseY,state.camZ];
  const dir=state.camera==='chase'?state.camYaw:0,ss=Math.sin(dir),cc=Math.cos(dir);
  // Elevated orbit with fixed heading or chase heading, respecting relief without camera roll.
  const eye=[target[0]-ss*128,target[1]+163,target[2]-cc*128];
@@ -135,7 +175,7 @@ function render(state,track,trees,ground,roadHalf){
  const I=identity();for(const m of world)draw(m,I);
  // Four wheels track the terrain independently, body floats over axle averages.
  const th=state.theta,si=Math.sin(th),co=Math.cos(th),fx=si,fz=co,rx=co,rz=-si;
- let heights=[];for(const f of [-2.12,2.12])for(const s of [-1,1]){let x=state.x+f*fx+s*1.63*rx,z=state.z+f*fz+s*1.63*rz;heights.push(ground(x,z));}
+ let heights=[];for(const f of [-2.12,2.12])for(const s of [-1,1]){let x=state.x+f*fx+s*1.63*rx,z=state.z+f*fz+s*1.63*rz;heights.push(roadSurface(x,z,track,ground,roadHalf));}
  const avg=heights.reduce((a,b)=>a+b,0)/4;
  // exaggerated but bounded visual weight transfer; the simulation remains arcade physics.
  const reliefRoll=Math.atan2((heights[0]+heights[2]-heights[1]-heights[3])*.5,3.25);
@@ -154,13 +194,17 @@ function render(state,track,trees,ground,roadHalf){
  // Simple spatial skid traces from real slip positions, lifted above the gravel surface.
  if(state.skids?.length){const builder=meshBuilder();let prev=null;
  for(const s of state.skids){if(prev&&prev.side===s.side&&s.t-prev.t<.14&&Math.hypot(s.x-prev.x,s.z-prev.z)<6){
- const a=[prev.x,ground(prev.x,prev.z)+.21,prev.z],b=[s.x,ground(s.x,s.z)+.21,s.z],dx=b[0]-a[0],dz=b[2]-a[2],mag=Math.hypot(dx,dz)||1,wx=dz/mag*.24,wz=-dx/mag*.24;
+ const a=[prev.x,roadSurface(prev.x,prev.z,track,ground,roadHalf)+.21,prev.z],b=[s.x,roadSurface(s.x,s.z,track,ground,roadHalf)+.21,s.z],dx=b[0]-a[0],dz=b[2]-a[2],mag=Math.hypot(dx,dz)||1,wx=dz/mag*.24,wz=-dx/mag*.24;
  builder.quad([a[0]-wx,a[1],a[2]-wz],[a[0]+wx,a[1],a[2]+wz],[b[0]+wx,b[1],b[2]+wz],[b[0]-wx,b[1],b[2]-wz],[.19,.17,.13]);
  }prev=s;}
  if(builder.data.length){const m=gpu(builder,true);draw(m,I);gl.deleteBuffer(m.buf);gl.deleteVertexArray(m.vao);}
  }
  gl.bindVertexArray(null);frame++;
 }
-window.GOPsRally3D={render,ready:true};
+window.GOPsRally3D={render,ready:true,
+ roadAt:(x,z,track)=>roadAt(x,z,track),
+ roadSurface:(x,z,track,ground,half)=>roadSurface(x,z,track,ground,half),
+ terrainSurface:(x,z,track,ground,half)=>terrainSurface(x,z,track,ground,half),
+ debugProjection:(angle=0)=>{const eye=[-Math.sin(angle)*128,163,-Math.cos(angle)*128],view=lookAt(eye,[0,0,0]),projection=ortho(-80,80,-80,80,5,850);projection[0]*=-1;return multiply(projection,view);}};
 document.documentElement.classList.add('webgl-3d');
 })();

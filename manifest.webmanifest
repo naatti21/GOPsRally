@@ -1,7 +1,7 @@
 {
   "name": "GOPs Rally",
   "short_name": "GOPs Rally",
-  "description": "Ajotuntumaa testaava arcade-ralliprototyyppi",
+  "description": "Responsive top-down arcade rally driving prototype",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

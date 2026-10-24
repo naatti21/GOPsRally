@@ -83,7 +83,7 @@
     running:false,paused:false,t:0,lap:1,lapT:0,best:savedBest(),camera:'hybrid',
     x:track[3].x,z:track[3].z,theta:track[3].theta,vx:0,vz:0,steer:0,
     speed:0,camX:track[3].x,camZ:track[3].z,camY:track[3].y,camYaw:track[3].theta,
-    closest:3,offroad:false,progress:3/track.length,dust:[],lapGuard:0
+    closest:3,safeIdx:3,offroad:false,progress:3/track.length,dust:[],lapGuard:0
   };
   UI.best.textContent=state.best ? formatTime(state.best) : '—';
   const input={left:false,right:false,brake:false};
@@ -91,6 +91,20 @@
   function resetCar(){
     const p=track[3];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:Math.sin(p.theta)*10,vz:Math.cos(p.theta)*10,steer:0,speed:10,
       camX:p.x,camZ:p.z,camY:p.y,camYaw:p.theta,lap:1,lapT:0,lapGuard:0,closest:3,offroad:false,dust:[]});
+  }
+  // Manual recovery preserves the current lap and its elapsed time.
+  // Use the last safe road sample, never the nearest piece of road off-track.
+  function recoverCar(){
+    if(!state.running || state.paused)return;
+    const idx=state.safeIdx;
+    const p=track[idx];
+    Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,speed:0,steer:0,
+      camX:p.x,camZ:p.z,camY:p.y,camYaw:state.camera==='fixed'?0:p.theta,
+      closest:idx,offroad:false,dust:[]});
+    Object.keys(input).forEach(k=>input[k]=false);
+    Object.values(btnMap).forEach(b=>b.classList.remove('pressed'));
+    held.clear();
+    showToast('BACK ON TRACK',1.2);
   }
   function resize(){
     w=window.innerWidth;h=window.innerHeight;
@@ -109,6 +123,7 @@
   document.querySelectorAll('[data-camera]').forEach(b=>b.addEventListener('click',()=>cameraMode(b.dataset.camera)));
   function pause(){if(!state.running)return;state.paused=!state.paused;UI.overlay.classList.toggle('hidden',!state.paused);UI.start.innerHTML=state.paused?'JATKA AJOA <span>→</span>':'ALOITA AJO <span>→</span>';UI.pause.textContent=state.paused?'▶':'Ⅱ';Object.keys(input).forEach(k=>input[k]=false);}
   UI.pause.addEventListener('click',pause);
+  $('recover').addEventListener('click',recoverCar);
   UI.start.addEventListener('click',()=>{
     if(!state.running){resetCar();state.running=true;state.paused=false;state.t=0;}
     else state.paused=false;
@@ -142,6 +157,7 @@
     const road=near.dist<ROAD_HALF+.6;
     state.offroad=!road;
     state.closest=near.idx;
+    if(road && near.dist<ROAD_HALF*.7)state.safeIdx=near.idx;
     const rightTurn=(input.right?1:0)-(input.left?1:0);
     state.steer=lerp(state.steer,rightTurn,1-Math.exp(-dt*18));
     let vx=state.vx,vz=state.vz;
@@ -160,9 +176,19 @@
     const hillBefore=track[(near.idx+track.length-5)%track.length],hillAfter=track[(near.idx+5)%track.length];
     const grade=(hillAfter.y-hillBefore.y)/Math.max(1,length(hillAfter.x-hillBefore.x,hillAfter.z-hillBefore.z));
     const goingForward=Math.cos(state.theta-near.at.theta);
-    const a=(input.brake?-41:17)-.0058*speed*speed-(road?0:19)-grade*13*goingForward;
+    // Off-road slowing is drag opposing movement, not negative engine torque.
+    // Holding BRAKE slows the car, then intentionally selects reverse.
+    const forwardSpeed=vx*fX+vz*fZ;
+    const a=(input.brake?-34:17)-.0058*speed*speed*Math.sign(forwardSpeed||1)-grade*13*goingForward;
     vx+=fX*a*dt;vz+=fZ*a*dt;
-    if(input.brake){const v=length(vx,vz);if(v<1.2){vx=0;vz=0;}}
+    if(!road){
+      const v=length(vx,vz),slow=Math.max(0,1-13*dt/Math.max(.001,v));
+      vx*=slow;vz*=slow;
+    }
+    if(input.brake){
+      const back=vx*fX+vz*fZ;
+      if(back < -7){vx+=(-7-back)*fX;vz+=(-7-back)*fZ;}
+    }
     vx*=Math.exp(-dt*.015);vz*=Math.exp(-dt*.015);
     state.vx=vx;state.vz=vz;state.x+=vx*dt;state.z+=vz*dt;
     state.speed=length(vx,vz);
@@ -359,7 +385,7 @@
     }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Virhe ajossa — avaa konsoli lisätietoihin.';}
     requestAnimationFrame(tick);
   }
-  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,speed:state.speed,heading:state.theta,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
+  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
   if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline cache unavailable',e)));
   requestAnimationFrame(tick);
 })();

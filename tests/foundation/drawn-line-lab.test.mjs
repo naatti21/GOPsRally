@@ -62,4 +62,11 @@ test('countersteer timing changes measured chassis outcome; catchability is repo
     assert.ok(s.minimumWheelContacts>=0&&s.minimumWheelContacts<=4);
   }
   assert.ok(Math.abs(early.netLateralMeters-late.netLateralMeters)>0.01);
+  if(early.maxBodySlipDegrees<8)
+    assert.equal(early.regainedControl,false,'never count routine steering as a recovered slide');
+  const seeded=runSlideTrial({countersteerDelaySeconds:0.15,
+    seedSlipDegrees:18,seedYawRate:-0.55});
+  assert.ok(seeded.hadBreakaway,'the seeded fixture must actually reproduce a meaningful slide');
+  assert.ok(seeded.maxBodySlipDegrees>=8);
+  assert.equal(typeof seeded.regainedControl,'boolean');
 });

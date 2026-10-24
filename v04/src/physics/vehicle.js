@@ -1,6 +1,7 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Vector3, Quaternion } from "three";
 import { driveIntent } from "../game/contracts.js";
+import { tireGrip, velocityAtWheel, measuredSlip } from "./tire.js";
 export const TUNE = Object.freeze({
   mass: 1200,
   centerOfMassY: -0.1,
@@ -77,6 +78,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
   let brakeHeld = 0,
     steer = 0,
     reversing = false;
+  const tireState = WHEELS.map(() => ({ slipAngle: 0, sideGrip: 1, surface: 0 }));
   const direction = () =>
     new Vector3(0, 0, -1).applyQuaternion(body.rotation());
   function speed() {
@@ -95,6 +97,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     brakeHeld = 0;
     steer = 0;
     reversing = false;
+    tireState.forEach((state) => Object.assign(state, { slipAngle: 0, sideGrip: 1, surface: 0 }));
   }
   function tick(dt, input = {}, enabled = true) {
     const v = speed();
@@ -108,15 +111,35 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
           brake: false,
         }
       : driveIntent(input, v, brakeHeld);
-    steer = intent.steer * (0.48 / (1 + Math.abs(v) / 22));
+    // Retain speed sensitivity, but preserve enough steering authority for
+    // driver-controlled recovery from a slide at normal rally speeds.
+    steer = intent.steer * (0.48 / (1 + Math.abs(v) / 28));
     const engine = enabled
       ? intent.throttle *
         TUNE.engineForce *
         Math.max(0, 1 - Math.abs(v) / (reversing ? 8 : 62))
       : 0;
+    // Measure each contact's *own* lateral slip (including yaw velocity), not
+    // merely the car heading. Native Rapier wheel impulses and suspension
+    // remain authoritative; per-wheel side stiffness fades beyond grip peak.
+    const q = body.rotation();
+    const center = new Vector3(body.translation().x, body.translation().y, body.translation().z);
+    const lin = body.linvel(), ang = body.angvel();
     for (let i = 0; i < 4; i++) {
       const contact = controller.wheelContactPoint(i);
       const type = contact ? surfaceAt(contact.x, contact.z) : 0;
+      const wheelSteer = i < 2 ? steer : 0;
+      const anchor = new Vector3(...WHEELS[i]).applyQuaternion(q).add(center);
+      const offset = anchor.clone().sub(center);
+      const pointVelocity = velocityAtWheel(lin, ang, offset);
+      const right = new Vector3(Math.cos(wheelSteer), 0, Math.sin(wheelSteer)).applyQuaternion(q);
+      const forward = new Vector3(Math.sin(wheelSteer), 0, -Math.cos(wheelSteer)).applyQuaternion(q);
+      const lateral = pointVelocity.x * right.x + pointVelocity.y * right.y + pointVelocity.z * right.z;
+      const longitudinal = pointVelocity.x * forward.x + pointVelocity.y * forward.y + pointVelocity.z * forward.z;
+      const angle = measuredSlip(lateral, longitudinal);
+      const grip = tireGrip(angle, longitudinal, type, i >= 2);
+      Object.assign(tireState[i], { slipAngle: angle, sideGrip: grip, surface: type });
+      controller.setWheelSideFrictionStiffness(i, grip);
       controller.setWheelFrictionSlip(i, [1.6, 1.25, 0.95, 0.7][type] ?? 0.7);
       controller.setWheelSteering(i, i < 2 ? -steer : 0);
       controller.setWheelEngineForce(i, engine / 4);
@@ -147,11 +170,22 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     }
   }
   function snapshot() {
+    const velocity = body.linvel();
+    const orientation = body.rotation();
+    const forward = new Vector3(0, 0, -1).applyQuaternion(orientation);
+    const right = new Vector3(1, 0, 0).applyQuaternion(orientation);
+    const up = new Vector3(0, 1, 0).applyQuaternion(orientation);
+    const localLongitudinal = forward.dot(velocity);
+    const localLateral = right.dot(velocity);
+    const yawRate = up.dot(body.angvel());
     return {
       position: { ...body.translation() },
-      rotation: { ...body.rotation() },
+      rotation: { ...orientation },
       speed: speed(),
       steer,
+      lateralSpeed: localLateral,
+      bodySlipAngle: measuredSlip(localLateral, localLongitudinal),
+      yawRate,
       wheels: WHEELS.map((_, i) => ({
         contact: controller.wheelIsInContact(i),
         length: controller.wheelSuspensionLength(i),
@@ -159,6 +193,9 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
         rotation: controller.wheelRotation(i),
         steer: controller.wheelSteering(i),
         sideImpulse: controller.wheelSideImpulse(i),
+        slipAngle: tireState[i].slipAngle,
+        sideGrip: tireState[i].sideGrip,
+        surface: tireState[i].surface,
       })),
     };
   }

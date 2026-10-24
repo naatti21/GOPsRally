@@ -184,8 +184,9 @@ async function start() {
       : countdown > 0
         ? Math.ceil(countdown)
         : "";
+    const slipping = Math.abs(current.bodySlipAngle) > 0.17 && Math.abs(current.speed) > 8;
     $("#status").textContent =
-      `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7`;
+      `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7${slipping ? " · SLIDE" : ""}`;
     const mp = mapPoint(current.position);
     $("#map-car").setAttribute("cx", mp.x);
     $("#map-car").setAttribute("cy", mp.y);

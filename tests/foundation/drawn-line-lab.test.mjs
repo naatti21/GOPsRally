@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compileSegments, drawDriver, PHYSICS_TEST_LINE, lineAtKnot }
   from '../../v04/src/testing/line-lab.js';
-import { runLineTrial, runSlideTrial } from '../../scripts/physics-line-lab.mjs';
+import { runLineTrial, runSlideTrial, runRecoveryComparison } from '../../scripts/physics-line-lab.mjs';
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} differs from ${b}`);
 
 test('drawn segments connect with continuous position, tangent and curvature (C2)',()=>{
@@ -58,15 +58,24 @@ test('countersteer timing changes measured chassis outcome; catchability is repo
   assert.deepEqual(early,runSlideTrial({countersteerDelaySeconds:0}));
   for(const s of [early,late]){
     assert.ok(Number.isFinite(s.finalSlipDegrees)&&Number.isFinite(s.finalYawRateDegreesPerSecond));
-    assert.equal(typeof s.regainedControl,'boolean');
+    assert.equal(typeof s.slipSettled,'boolean');
     assert.ok(s.minimumWheelContacts>=0&&s.minimumWheelContacts<=4);
   }
   assert.ok(Math.abs(early.netLateralMeters-late.netLateralMeters)>0.01);
   if(early.maxBodySlipDegrees<8)
-    assert.equal(early.regainedControl,false,'never count routine steering as a recovered slide');
+    assert.equal(early.slipSettled,false,'never count routine steering as a recovered slide');
   const seeded=runSlideTrial({countersteerDelaySeconds:0.15,
     seedSlipDegrees:18,seedYawRate:-0.55});
   assert.ok(seeded.hadBreakaway,'the seeded fixture must actually reproduce a meaningful slide');
   assert.ok(seeded.maxBodySlipDegrees>=8);
-  assert.equal(typeof seeded.regainedControl,'boolean');
+  assert.equal(typeof seeded.slipSettled,'boolean');
+  const comparison=runRecoveryComparison();
+  assert.equal(comparison.passive.countersteerDelaySeconds,10);
+  assert.ok(comparison.passive.hadBreakaway);
+  assert.ok(comparison.trials.every(x=>typeof x.driverCatch==='boolean'));
+  assert.ok(comparison.trials.some(x=>x.driftReductionVsPassiveMeters>10),
+    'opposite steering must have a measurable advantage over passive straightening');
+  for(const x of comparison.trials){
+    if(x.driverCatch)assert.ok(x.slipSettled && Math.abs(x.netLateralMeters)<5);
+  }
 });

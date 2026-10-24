@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: c41678d12993dbe0a87cc1ad6f233f8e5e3f552f
+          ref: fbebbc9e77651186a942a47aae5f2ad8508933eb
           persist-credentials: true
       - uses: actions/setup-node@v4
         with:
@@ -40,5 +40,5 @@ jobs:
             echo 'Preview files are already current.'
             exit 0
           fi
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'preview: publish isolated v0.4.1 camera and road visibility fixes'
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'preview: publish isolated v0.4.2 fixed-camera framing'
           git push origin HEAD:main

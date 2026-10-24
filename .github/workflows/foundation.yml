@@ -15,6 +15,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Draw-line physics metrics (real Rapier, deterministic)
+        run: |
+          node scripts/physics-line-lab.mjs > draw-line-report.json
+          cat draw-line-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: draw-line-physics-metrics
+          path: draw-line-report.json
+          retention-days: 14
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

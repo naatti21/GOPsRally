@@ -5,7 +5,8 @@
 (() => {
 'use strict';
 const canvas = document.getElementById('scene3d');
-const gl = canvas?.getContext('webgl2', {antialias:true,alpha:false,powerPreference:'high-performance'});
+const forceCanvas = typeof location !== 'undefined' && new URLSearchParams(location.search).get('graphics') === '2d';
+const gl = forceCanvas ? null : canvas?.getContext('webgl2', {antialias:true,alpha:false,powerPreference:'high-performance'});
 if (!gl) { document.documentElement.classList.add('fallback-2d'); return; }
 const vs = `#version 300 es
 precision highp float;

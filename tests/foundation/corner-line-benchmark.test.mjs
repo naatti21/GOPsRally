@@ -8,7 +8,7 @@ import { runCornerTrial,runCornerComparison }
 
 test('all racing-line alternatives are smooth, bounded by identical road, and share start and finish',()=>{
   const geometry=cornerCenterSamples();
-  const courses=LINE_IDS.map(makeCornerLine);
+  const courses=LINE_IDS.map(id=>makeCornerLine(id));
   for(const course of courses) {
     const p=course.path.samples;
     assert.ok(course.maxPlannedOffsetMeters<CORNER.roadHalf-0.5);

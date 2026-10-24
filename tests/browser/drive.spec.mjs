@@ -50,6 +50,20 @@ for (const width of [320, 393])
       page.getByRole("button", { name: "Chase", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await assertCarInFrame(page);
+    // Fixed must be meaningfully zoomed out from Chase, keep the car centered,
+    // and never transition via the stale inspector camera at speed.
+    await page.getByRole("button", { name: "Fixed", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Fixed", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await assertCarInFrame(page);
+    const fixed = await page.evaluate(() => rallyDrive.snapshot().metrics);
+    expect(fixed.cameraDistance).toBeGreaterThan(38);
+    expect(fixed.cameraDistance).toBeLessThan(46);
+    expect(Math.abs(fixed.carNdc.x)).toBeLessThan(0.25);
+    expect(Math.abs(fixed.carNdc.y)).toBeLessThan(0.25);
+    await page.getByRole("button", { name: "Chase", exact: true }).click();
+    await assertCarInFrame(page);
     expect(
       await page.evaluate(
         (p) =>

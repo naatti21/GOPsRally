@@ -15,7 +15,7 @@
   <canvas id="game" aria-label="GOPs Rally circuit"></canvas>
   <div class="vignette" aria-hidden="true"></div>
   <header class="hud">
-    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>DRIVING PROTOTYPE / 0.2</small></span></div>
+    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>DRIVING PROTOTYPE / 0.2.1</small></span></div>
     <div class="times">
       <div><span class="eyebrow">LAP</span><strong id="lap">01</strong></div>
       <div><span class="eyebrow">TIME</span><strong id="time">00:00.00</strong></div>
@@ -24,7 +24,7 @@
   </header>
   <section class="status-card" aria-live="polite"><span id="surface" class="surface-pill">GRAVEL</span><span id="message">Learn the road. Then find your pace.</span></section>
   <div class="speed"><strong id="speed">0</strong><div><span>KM/H</span><small id="gear">AUTO</small></div></div>
-  <aside class="camera-box"><div class="cam-title">CAMERA</div><div class="camera-switch" role="group" aria-label="Kameratila"><button data-camera="fixed" type="button" class="active">FIXED</button><button data-camera="hybrid" type="button">HYBRID</button><button data-camera="chase" type="button">CHASE</button></div></aside>
+  <aside class="camera-box"><div class="cam-title">CAMERA</div><div class="camera-switch" role="group" aria-label="Kameratila"><button data-camera="fixed" type="button" class="active">FIXED</button><button data-camera="chase" type="button">CHASE</button></div></aside>
   <div id="controls" class="controls" aria-label="Driving controls">
     <button id="left" class="drive-btn steer" aria-label="Steer left" type="button"><span>↶</span><small>LEFT</small></button>
     <button id="brake" class="drive-btn brake" aria-label="Brake and reverse" type="button"><span>▮▮</span><small>BRAKE</small></button>
@@ -34,7 +34,7 @@
   <button id="recover" class="recover-button" type="button" aria-label="Return car to road" title="Return to road">↺ <small>RESET</small></button>
   <div id="overlay" class="overlay">
     <div class="panel">
-      <span class="kicker">GOPS RALLY / TEST BUILD 0.2</span>
+      <span class="kicker">GOPS RALLY / TEST BUILD 0.2.1</span>
       <div class="panel-rule"></div>
       <h1>LEARN THE ROAD.<br><em>FIND THE LIMIT.</em></h1>
       <p>Throttle is automatic. Steer left and right, brake before tight turns. Road camber, elevation and grip all affect your line.</p>
@@ -43,6 +43,7 @@
       <small>Phone: touch controls · Computer: ← → / A D, Space to brake. Hold brake at a stop to reverse.</small>
     </div>
   </div>
+  <div id="countdown" class="countdown" role="status" aria-live="polite"></div>
   <div id="toast" class="toast" role="status"></div>
 </body>
 </html>

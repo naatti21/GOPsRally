@@ -85,7 +85,7 @@ export function runSlideTrial({speedMps=23,turnSeconds=0.46,
     const last=rows.at(-1),max=Math.max(...rows.map(r=>Math.abs(r.slip)));
     const mean=key=>rows.reduce((a,r)=>a+r[key],0)/rows.length;
     const hadBreakaway=max>8*Math.PI/180;
-    const regainedControl=hadBreakaway &&
+    const slipSettled=hadBreakaway &&
       Math.abs(last.slip)<Math.min(6*Math.PI/180,max*0.5) &&
       Math.abs(last.yaw)<0.4 && last.contacts>=2;
     const onset=rows[Math.min(rows.length-1,Math.round(turnSeconds*60))];
@@ -97,8 +97,26 @@ export function runSlideTrial({speedMps=23,turnSeconds=0.46,
       meanFrontGrip:round(mean('front'),3),meanRearGrip:round(mean('rear'),3),
       minimumWheelContacts:Math.min(...rows.map(r=>r.contacts)),
       netLateralMeters:round(last.x,1),
-      regainedControl};
+      slipSettled};
   }finally{world.free();}
+}
+/**
+ * Distinguish natural chassis self-stabilization from a DRIVER catch.
+ * Every trial has the same initial physical conditions and steering pulse.
+ * The late baseline simply has no opposite steering within the run.
+ */
+export function runRecoveryComparison({seedSlipDegrees=18,seedYawRate=-0.55}={}) {
+  const options={seedSlipDegrees,seedYawRate};
+  const passive=runSlideTrial({...options,countersteerDelaySeconds:10});
+  const trials=[0,0.15,0.35,0.6,1.2].map(countersteerDelaySeconds=>{
+    const trial=runSlideTrial({...options,countersteerDelaySeconds});
+    const improvement=round(Math.abs(passive.netLateralMeters)-
+      Math.abs(trial.netLateralMeters),1);
+    return {...trial,driftReductionVsPassiveMeters:improvement,
+      driverCatch:trial.slipSettled && trial.hadBreakaway &&
+        Math.abs(trial.netLateralMeters)<5 && improvement>10};
+  });
+  return {passive, trials};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   console.log(JSON.stringify({
@@ -106,8 +124,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
     speedPlans:[0.65,1,1.35].map(speedFactor=>({speedFactor,...runLineTrial({speedFactor})})),
     steeringInduced:[0,0.15,0.35,0.6,1.2].map(countersteerDelaySeconds=>
       runSlideTrial({countersteerDelaySeconds})),
-    seededSnapRecovery:[0,0.15,0.35,0.6,1.2,10].map(countersteerDelaySeconds=>
-      runSlideTrial({countersteerDelaySeconds,seedSlipDegrees:18,seedYawRate:-0.55})),
-    caveat:'Only a genuine 8+ degree breakaway qualifies as slide recovery. No artificial car motion after test initialization.'
+    seededSnapRecovery:runRecoveryComparison(),
+    caveat:'slipSettled alone is NOT a driver catch. A catch requires substantially smaller drift than the no-countersteer baseline. All motion uses real Rapier physics.'
   },null,2));
 }

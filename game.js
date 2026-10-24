@@ -8,7 +8,7 @@
   const canvas = document.querySelector('#game');
   const ctx = canvas.getContext('2d', { alpha: false });
   const $ = id => document.getElementById(id);
-  const UI = { lap: $('lap'), time: $('time'), best: $('best'), speed: $('speed'), surface: $('surface'), message: $('message'), overlay: $('overlay'), start: $('start'), pause: $('pause'), toast: $('toast') };
+  const UI = { lap: $('lap'), time: $('time'), best: $('best'), speed: $('speed'), surface: $('surface'), message: $('message'), overlay: $('overlay'), start: $('start'), pause: $('pause'), toast: $('toast'), countdown: $('countdown') };
   const PI2 = Math.PI * 2;
   const ROAD_HALF = 13.5;
   const COURSE = [
@@ -31,7 +31,7 @@
   const SEGMENTS = COURSE.length * 38;
   // Midpoint of the long southern approach straight, rather than the first hairpin.
   const FINISH_IDX = 627;
-  const START_IDX = (FINISH_IDX + 10) % SEGMENTS;
+  const START_IDX = FINISH_IDX; // Start on the line, facing down the straight.
   for (let i=0; i<COURSE.length; i++) {
     const n = COURSE.length;
     const p0=COURSE[(i+n-1)%n], p1=COURSE[i], p2=COURSE[(i+1)%n], p3=COURSE[(i+2)%n];
@@ -83,7 +83,7 @@
   let w=0,h=0,dpr=1,last=performance.now(),toastUntil=0,frameCount=0;
   const savedBest=()=>{try{const s=localStorage.getItem('gopsrally-best-v1');return s?Number(s):null;}catch{return null;}};
   const state={
-    running:false,paused:false,t:0,lap:1,lapT:0,best:savedBest(),camera:'fixed',
+    running:false,paused:false,t:0,lap:1,lapT:0,best:savedBest(),camera:'fixed',countdown:0,goFlash:0,
     x:track[START_IDX].x,z:track[START_IDX].z,theta:track[START_IDX].theta,vx:0,vz:0,steer:0,
     speed:0,camX:track[START_IDX].x,camZ:track[START_IDX].z,camY:track[START_IDX].y,camYaw:0,
     closest:START_IDX,safeIdx:START_IDX,offroad:false,progress:START_IDX/track.length,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0,lapGuard:0
@@ -92,8 +92,8 @@
   const input={left:false,right:false,brake:false};
 
   function resetCar(){
-    const p=track[START_IDX];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:Math.sin(p.theta)*10,vz:Math.cos(p.theta)*10,steer:0,speed:10,
-      camX:p.x,camZ:p.z,camY:p.y,camYaw:0,lap:1,lapT:0,lapGuard:0,closest:START_IDX,safeIdx:START_IDX,offroad:false,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0});
+    const p=track[START_IDX];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,steer:0,speed:0,
+      camX:p.x,camZ:p.z,camY:p.y,camYaw:0,lap:1,lapT:0,lapGuard:0,countdown:0,goFlash:0,closest:START_IDX,safeIdx:START_IDX,offroad:false,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0});
   }
   // Manual recovery preserves the current lap and its elapsed time.
   // Use the last safe road sample, never the nearest piece of road off-track.
@@ -122,14 +122,16 @@
     return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
   }
   function showToast(text,duration=2){UI.toast.textContent=text;UI.toast.classList.add('show');toastUntil=performance.now()+duration*1000;}
-  function cameraMode(mode){if(!['fixed','hybrid','chase'].includes(mode))return;state.camera=mode;document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));showToast('CAMERA: '+({fixed:'FIXED',hybrid:'HYBRID',chase:'CHASE'}[mode]),1.1);}
+  function cameraMode(mode){if(!['fixed','chase'].includes(mode))return;state.camera=mode;document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));showToast('CAMERA: '+({fixed:'FIXED',chase:'CHASE'}[mode]),1.1);}
   document.querySelectorAll('[data-camera]').forEach(b=>b.addEventListener('click',()=>cameraMode(b.dataset.camera)));
   function pause(){if(!state.running)return;state.paused=!state.paused;UI.overlay.classList.toggle('hidden',!state.paused);UI.start.innerHTML=state.paused?'RESUME DRIVING <span>→</span>':'START DRIVING <span>→</span>';UI.pause.textContent=state.paused?'▶':'Ⅱ';Object.keys(input).forEach(k=>input[k]=false);}
   UI.pause.addEventListener('click',pause);
   $('recover').addEventListener('click',recoverCar);
   UI.start.addEventListener('click',()=>{
-    if(!state.running){resetCar();state.running=true;state.paused=false;state.t=0;}
-    else state.paused=false;
+    if(!state.running){
+      resetCar();state.running=true;state.paused=false;state.t=0;state.countdown=2;
+      UI.countdown.textContent='2';UI.countdown.classList.add('show');
+    } else state.paused=false;
     UI.overlay.classList.add('hidden');UI.pause.textContent='Ⅱ';
   });
   document.addEventListener('visibilitychange',()=>{if(document.hidden && state.running && !state.paused)pause();});
@@ -146,8 +148,7 @@
     if(keys[e.code]){e.preventDefault();held.add(e.code);rebuildKeys();}
     else if(e.code==='Escape'&&!e.repeat)pause();
     else if(e.code==='Digit1')cameraMode('fixed');
-    else if(e.code==='Digit2')cameraMode('hybrid');
-    else if(e.code==='Digit3')cameraMode('chase');
+    else if(e.code==='Digit2')cameraMode('chase');
   });
   window.addEventListener('keyup',e=>{if(keys[e.code]){e.preventDefault();held.delete(e.code);rebuildKeys();}});
   window.addEventListener('blur',()=>{held.clear();rebuildKeys();});
@@ -155,6 +156,16 @@
   function update(dt){
     if(!state.running||state.paused)return;
     dt=Math.min(.045,dt);
+    if(state.countdown>0){
+      state.countdown=Math.max(0,state.countdown-dt);
+      if(state.countdown>0)UI.countdown.textContent=String(Math.ceil(state.countdown));
+      else {UI.countdown.textContent='GO!';state.goFlash=.55;}
+      return; // Keep the car stationary and don't start the lap clock yet.
+    }
+    if(state.goFlash>0){
+      state.goFlash=Math.max(0,state.goFlash-dt);
+      if(state.goFlash===0)UI.countdown.classList.remove('show');
+    }
     state.t+=dt;state.lapT+=dt;state.lapGuard+=dt;
     const oldX=state.x,oldZ=state.z;
     const near=closestRoad(oldX,oldZ);
@@ -217,9 +228,9 @@
     }
     state.closest=after.idx;
     const cm=state.camera;
-    const desiredYaw=cm==='fixed'?0:cm==='hybrid'?state.theta*.38:state.theta;
+    const desiredYaw=cm==='fixed'?0:state.theta;
     if(cm==='fixed')state.camYaw=lerp(state.camYaw,0,1-Math.exp(-dt*2.6));
-    else state.camYaw+=turnAngle(desiredYaw-state.camYaw)*(1-Math.exp(-dt*(cm==='hybrid'?1.8:3.3)));
+    else state.camYaw+=turnAngle(desiredYaw-state.camYaw)*(1-Math.exp(-dt*3.3));
     // The car is offset toward the bottom of the view as speed rises.
     const lead=11+clamp(state.speed/54,0,1)*28;
     const targetX=state.x+Math.sin(state.theta)*lead,targetZ=state.z+Math.cos(state.theta)*lead;
@@ -423,7 +434,7 @@
     }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Driving error — check the console.';}
     requestAnimationFrame(tick);
   }
-  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
+  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,countdown:state.countdown,goFlash:state.goFlash,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
   if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline cache unavailable',e)));
   requestAnimationFrame(tick);
 })();

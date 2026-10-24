@@ -14,6 +14,16 @@
 
 Mobiili ensin. PWA, paikallinen tallennus, kevyt ja nopea. Ei muiden sovellusten kanssa jaettuja tiedostoja tai tietokantoja. Teknistä rakennetta ei päätetä peruuttamattomasti ennen ajotestiä.
 
+## v0.1.1 — manuaalinen palautus
+
+- Erillinen **RESET**-painike palauttaa auton viimeiselle turvalliselle rataosuudelle.
+- Auto palautuu levosta, mutta mitään erillistä odotusajastinta ei ole.
+- Kierros, kierrosaika ja ennätys eivät nollaudu palautuksesta.
+- Automaattista metsään jääneen auton palauttamista ei tehdä.
+- Maasto hidastaa liikkeen suuntaan, eikä automaattikaasu pakota autoa peruuttamaan.
+- Kun **JARRU** pidetään pohjassa lähes pysähdyksiin, painike toimii myös pakkina.
+- Englannin kieli, maaliviivan siirto, kameran oletusasetukset, ohjainnappien ergonomia ja visuaaliset päivitykset ovat edelleen v0.2-jatkokehitystä.
+
 ## Tämänhetkinen tilanne
 
 Ensimmäinen testattava prototyyppi on tehty ja sen Node-smoke-testit ajettu. Varsinainen mobiiliselain- ja GitHub Pages -testaus ovat vielä tekemättä. Älä käsittele tätä vielä julkaisuvalmiina pelinä.

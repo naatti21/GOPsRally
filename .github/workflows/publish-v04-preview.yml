@@ -1,0 +1,44 @@
+name: Publish isolated v0.4 phone preview
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-v04-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 1c2ddffd7be295bc052d91a17c3306be88391dda
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Verify foundation tests
+        run: npm ci && npm test
+      - name: Generate isolated offline preview
+        run: npm run build
+      - name: Publish only the v0.4 folder to Pages branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/v04/index.html
+          test -f dist/v04/sw.js
+          test -f dist/v04/manifest.webmanifest
+          cp -a dist/v04 /tmp/gops-rally-v04-preview
+          git fetch origin main
+          git checkout -B preview-main origin/main
+          mkdir -p v04
+          cp -a /tmp/gops-rally-v04-preview/. v04/
+          git add -- v04/
+          if git diff --cached --quiet; then
+            echo 'Preview files are already current.'
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'preview: publish isolated v0.4 terrain inspection site'
+          git push origin HEAD:main

@@ -54,14 +54,22 @@ export function runLineTrial({speedFactor=1,durationSeconds=21}={}) {
   }finally{world.free();}
 }
 export function runSlideTrial({speedMps=23,turnSeconds=0.46,
-  countersteerDelaySeconds=0.2,countersteerSeconds=1.15,durationSeconds=3}={}) {
-  if(![speedMps,turnSeconds,countersteerDelaySeconds,countersteerSeconds,durationSeconds]
+  countersteerDelaySeconds=0.2,countersteerSeconds=1.15,durationSeconds=3,
+  seedSlipDegrees=0,seedYawRate=0}={}) {
+  if(![speedMps,turnSeconds,countersteerDelaySeconds,countersteerSeconds,durationSeconds,seedSlipDegrees,seedYawRate]
     .every(Number.isFinite)||speedMps<3||speedMps>54||
     Math.min(turnSeconds,countersteerDelaySeconds,countersteerSeconds,durationSeconds)<0)
     throw Error('Invalid slide experiment');
   const {world,car}=rig(),rows=[];
   try {
     car.body.setLinvel({x:0,y:0,z:-speedMps},true);
+    // Initialize the physical car with known yaw and slip BEFORE simulation;
+    // never rewrite its pose, yaw or velocity while it is being controlled.
+    if(seedSlipDegrees!==0 || seedYawRate!==0) {
+      const yaw=-seedSlipDegrees*Math.PI/180;
+      car.body.setRotation({x:0,y:Math.sin(yaw/2),z:0,w:Math.cos(yaw/2)},true);
+      car.body.setAngvel({x:0,y:seedYawRate,z:0},true);
+    }
     for(let frame=0;frame<Math.round(durationSeconds*60);frame++){
       const t=frame*dt;
       const right=t<turnSeconds;
@@ -76,8 +84,12 @@ export function runSlideTrial({speedMps=23,turnSeconds=0.46,
     }
     const last=rows.at(-1),max=Math.max(...rows.map(r=>Math.abs(r.slip)));
     const mean=key=>rows.reduce((a,r)=>a+r[key],0)/rows.length;
+    const hadBreakaway=max>8*Math.PI/180;
+    const regainedControl=hadBreakaway &&
+      Math.abs(last.slip)<Math.min(6*Math.PI/180,max*0.5) &&
+      Math.abs(last.yaw)<0.4 && last.contacts>=2;
     const onset=rows[Math.min(rows.length-1,Math.round(turnSeconds*60))];
-    return {countersteerDelaySeconds,
+    return {countersteerDelaySeconds,seedSlipDegrees,seedYawRate,hadBreakaway,
       onsetSlipDegrees:round(180/Math.PI*Math.abs(onset.slip),1),
       maxBodySlipDegrees:round(180/Math.PI*max,1),
       finalSlipDegrees:round(180/Math.PI*Math.abs(last.slip),1),
@@ -85,15 +97,17 @@ export function runSlideTrial({speedMps=23,turnSeconds=0.46,
       meanFrontGrip:round(mean('front'),3),meanRearGrip:round(mean('rear'),3),
       minimumWheelContacts:Math.min(...rows.map(r=>r.contacts)),
       netLateralMeters:round(last.x,1),
-      regainedControl:Math.abs(last.slip)<max*0.5 && Math.abs(last.yaw)<0.5};
+      regainedControl};
   }finally{world.free();}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   console.log(JSON.stringify({
     mode:'GOPs Rally Draw-line physics research (not player UI)',
     speedPlans:[0.65,1,1.35].map(speedFactor=>({speedFactor,...runLineTrial({speedFactor})})),
-    countersteerTimings:[0,0.15,0.35,0.6,1.2].map(countersteerDelaySeconds=>
+    steeringInduced:[0,0.15,0.35,0.6,1.2].map(countersteerDelaySeconds=>
       runSlideTrial({countersteerDelaySeconds})),
-    caveat:'Compare errors and recovery. A C2 line does not force the car to follow it.'
+    seededSnapRecovery:[0,0.15,0.35,0.6,1.2,10].map(countersteerDelaySeconds=>
+      runSlideTrial({countersteerDelaySeconds,seedSlipDegrees:18,seedYawRate:-0.55})),
+    caveat:'Only a genuine 8+ degree breakaway qualifies as slide recovery. No artificial car motion after test initialization.'
   },null,2));
 }

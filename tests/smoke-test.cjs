@@ -3,7 +3,7 @@ const noop=()=>{};let raf=null,now=0;const exceptions=[];
 const ctx=new Proxy({createLinearGradient:()=>({addColorStop:noop})},{get:(o,k)=>k in o?o[k]:noop,set:(o,k,v)=>(o[k]=v,true)});
 function makeElement(id){return {id,style:{},textContent:'',innerHTML:'',dataset:{},events:{},classList:{values:new Set(),add(x){this.values.add(x)},remove(x){this.values.delete(x)},contains(x){return this.values.has(x)},toggle(x,on){if(on)this.add(x);else this.remove(x)}},addEventListener(name,cb){this.events[name]=cb},setPointerCapture:noop,getContext:()=>ctx};}
 const elems=new Map();const el=k=>elems.get(k)||elems.set(k,makeElement(k)).get(k);
-const buttons=['fixed','hybrid','chase'].map(mode=>{const e=makeElement('cam-'+mode);e.dataset.camera=mode;return e;});
+const buttons=['fixed','chase'].map(mode=>{const e=makeElement('cam-'+mode);e.dataset.camera=mode;return e;});
 const document={querySelector:s=>el(s),getElementById:el,querySelectorAll:s=>s==='[data-camera]'?buttons:[],addEventListener:noop,hidden:false};
 const window={innerWidth:400,innerHeight:780,devicePixelRatio:1,addEventListener:noop};
 const sandbox={window,document,navigator:{},location:{protocol:'file:'},performance:{now:()=>now},requestAnimationFrame:f=>raf=f,console:{...console,error:e=>exceptions.push(e)},localStorage:{getItem:()=>null,setItem:noop},Math,Number,Array,String,Map,Set};
@@ -15,15 +15,25 @@ assert.strictEqual(window.__gopsRallyDebug.getSnapshot().camera,'fixed','default
 const finish=window.__gopsRallyDebug.getSnapshot();
 assert.notStrictEqual(finish.finishIdx,0,'finish must not be on hairpin');
 assert(finish.finishCurve<.2,'finish should be in a gentle straight');
+assert.strictEqual(finish.startIdx,finish.finishIdx,'starting position must match finish line');
 const html=fs.readFileSync(__dirname+'/../index.html','utf8');
 assert(html.includes('<html lang=\"en\">'),'main language should be English');
 assert(html.includes('>LEFT</small>')&&html.includes('>BRAKE</small>'),'controls must be English');
+assert(!html.includes('HYBRID'),'hybrid camera should not be available');
 el('start').events.click();assert.strictEqual(window.__gopsRallyDebug.getSnapshot().running,true);
+const start=window.__gopsRallyDebug.getSnapshot();
+assert.strictEqual(start.speed,0,'car must start stationary');
+assert(start.countdown>1.9,'countdown should start at 2 seconds');
+for(let i=0;i<90;i++){now+=17;const fn=raf;raf=null;fn(now);}
+assert.strictEqual(window.__gopsRallyDebug.getSnapshot().speed,0,'car must stay stationary during countdown');
+assert.strictEqual(window.__gopsRallyDebug.getSnapshot().elapsed,0,'lap clock must not start during countdown');
+for(let i=0;i<45;i++){now+=17;const fn=raf;raf=null;fn(now);}
+assert.strictEqual(window.__gopsRallyDebug.getSnapshot().countdown,0,'countdown must complete');
 const initial=window.__gopsRallyDebug.getSnapshot();
 for(let i=0;i<12;i++){now+=17;const fn=raf;raf=null;fn(now);}
 assert(window.__gopsRallyDebug.getSnapshot().speed>initial.speed,'car does not accelerate');
 buttons[0].events.click();assert.strictEqual(window.__gopsRallyDebug.getSnapshot().camera,'fixed');
-buttons[2].events.click();assert.strictEqual(window.__gopsRallyDebug.getSnapshot().camera,'chase');
+buttons[1].events.click();assert.strictEqual(window.__gopsRallyDebug.getSnapshot().camera,'chase');
 const heading=window.__gopsRallyDebug.getSnapshot().heading;
 el('right').events.pointerdown({preventDefault:noop,pointerId:1});
 for(let i=0;i<6;i++){now+=17;const fn=raf;raf=null;fn(now);}
@@ -49,4 +59,4 @@ for(let i=0;i<3;i++){now+=17;const fn=raf;raf=null;fn(now);}
 assert(window.__gopsRallyDebug.getSnapshot().speed>0,'car should move without an artificial reset delay');
 el('pause').events.click();assert(window.__gopsRallyDebug.getSnapshot().paused);
 assert.strictEqual(exceptions.length,0,exceptions.map(String).join('\n'));
-console.log('Validated: English UI, fixed default, finish on straight, driving, camera, reset, pause', window.__gopsRallyDebug.getSnapshot());
+console.log('Validated: two cameras, common start/finish, countdown, lap clock, driving, reset, pause', window.__gopsRallyDebug.getSnapshot());

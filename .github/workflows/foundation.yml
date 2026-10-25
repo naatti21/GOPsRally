@@ -49,6 +49,15 @@ jobs:
           name: v046-real-drive-feel
           path: drive-feel-report.json
           retention-days: 14
+      - name: Reproduce 40 kmh low-speed sideways sliding by surface
+        run: |
+          npm run --silent lab:40side > low-speed-side-grip.json
+          cat low-speed-side-grip.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v046-40kmh-side-grip
+          path: low-speed-side-grip.json
+          retention-days: 14
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

@@ -33,6 +33,15 @@ jobs:
           name: racing-line-corner-results
           path: corner-benchmark.json
           retention-days: 14
+      - name: Measure steer-only breakaway and correction windows
+        run: |
+          npm run lab:drift > drift-benchmark.json
+          cat drift-benchmark.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: steer-only-drift-metrics
+          path: drift-benchmark.json
+          retention-days: 14
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#142b2c" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>GOPs Rally · Drive</title>
+    <script type="module" crossorigin src="/GOPsRally/v046wgt/assets/game-RO4a1a88.js"></script>
+    <link rel="modulepreload" crossorigin href="/GOPsRally/v046wgt/assets/scene-ChOhaqAA.js">
+    <link rel="stylesheet" crossorigin href="/GOPsRally/v046wgt/assets/scene-BpYSTaZR.css">
+  </head>
+  <body class="driving">
+    <canvas aria-label="3D rally driving view"></canvas>
+    <header>
+      <span class="eyebrow">GOPS RALLY / v0.4.6WGT · GRASS DRIVE LIMIT LAB</span>
+      <div class="hud">
+        <strong id="speed">0</strong> km/h <output id="lap">Ready</output>
+      </div>
+      <output id="status" role="status">Loading physics…</output
+      ><svg
+        id="map"
+        viewBox="0 0 120 150"
+        aria-label="Track map, start line and direction"
+      ></svg>
+    </header>
+    <nav class="drive-menu" aria-label="Race controls">
+      <button id="go">GO</button><button id="reset">RESET</button
+      ><button data-camera="fixed" aria-pressed="false">Fixed</button
+      ><button data-camera="chase" aria-pressed="true">Chase</button>
+      <details>
+        <summary>Course settings</summary>
+        <label
+          >Start marker<select id="start">
+            <option value="0">Main straight</option>
+            <option value="0.25">Hill approach</option>
+            <option value="0.5">Chicane exit</option>
+            <option value="0.75">Return sector</option>
+          </select></label
+        ><label
+          >Direction<select id="direction">
+            <option value="1">Forward</option>
+            <option value="-1">Reverse</option>
+          </select></label
+        >
+        <p>
+          Original 1.72 km test loop · 39 m relief.<br />Start marker is
+          editable. Full 5 km course pending.
+        </p>
+        <a href="./inspect.html">Phase 1 inspector</a>
+      </details>
+    </nav>
+    <div id="countdown" aria-live="polite"></div>
+    <footer>
+      <div class="row" aria-label="Driving controls">
+        <button data-drive="left">◀ LEFT</button
+        ><button data-drive="brake">BRAKE</button
+        ><button data-drive="right">RIGHT ▶</button>
+      </div>
+      <span
+        >Auto throttle · Hold brake at rest to reverse · Reset invalidates this
+        lap</span
+      >
+    </footer>
+  </body>
+</html>

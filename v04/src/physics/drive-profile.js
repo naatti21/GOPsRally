@@ -1,0 +1,18 @@
+// Tune engine response independently from the slip/contact model.
+// v0.4.5's 6500 N × (1 - v/62) leaves mid-speed acceleration sluggish.
+// All forces remain applied via grounded tire contact/friction budgets.
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+export function availableEngineForce(speedMps, reversing=false,peakNewtons=9000) {
+  if (![speedMps,peakNewtons].every(Number.isFinite) || peakNewtons<0) return 0;
+  const speed=Math.abs(speedMps);
+  if(reversing) return Math.max(0,peakNewtons*0.42*(1-speed/8));
+  const t=clamp(speed/60,0,1);
+  return peakNewtons*(1-Math.pow(t,1.35));
+}
+export function wheelDriveForce(engineNewtons,wheelIndex,rearShare=0.6) {
+  if(!Number.isFinite(engineNewtons)||!Number.isFinite(rearShare)||
+     rearShare<0||rearShare>1||!Number.isInteger(wheelIndex)||wheelIndex<0||wheelIndex>3)
+    throw Error('Invalid drive distribution');
+  return engineNewtons*(wheelIndex<2?(1-rearShare)/2:rearShare/2);
+}

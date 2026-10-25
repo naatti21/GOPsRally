@@ -49,6 +49,13 @@ jobs:
           name: v046-real-drive-feel
           path: drive-feel-report.json
           retention-days: 14
+      - name: Grass recovery with and without automatic throttle
+        run: npm run --silent lab:grass > grass-traction-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grass-traction-recovery
+          path: grass-traction-report.json
+          retention-days: 14
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

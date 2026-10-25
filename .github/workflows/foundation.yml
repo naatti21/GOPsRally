@@ -40,6 +40,15 @@ jobs:
           name: arcade-drift-metrics
           path: arcade-drift-report.json
           retention-days: 14
+      - name: Compare acceleration, steering slip and 60/100 camera feel
+        run: |
+          node scripts/drive-feel-report.mjs > drive-feel-report.json
+          cat drive-feel-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v046-real-drive-feel
+          path: drive-feel-report.json
+          retention-days: 14
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

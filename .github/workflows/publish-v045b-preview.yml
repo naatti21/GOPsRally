@@ -1,0 +1,92 @@
+name: Publish isolated v0.4.5bb traction comparison
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-v045b-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: isolated-v045b-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout CI-verified v0.4.5b source (not production)
+        uses: actions/checkout@v4
+        with:
+          ref: bac49764e38f3fd220b3af67a08035af5463836d
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Isolate URL, manifest and PWA cache for v0.4.5b
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync, writeFileSync} from 'node:fs';
+          function replaceUnique(file, oldValue, newValue, expected=1) {
+            const src = readFileSync(file,'utf8');
+            const count=src.split(oldValue).length-1;
+            if(count!==expected) throw new Error(`${file}: expected ${expected} marker(s), found ${count}`);
+            writeFileSync(file,src.replaceAll(oldValue,newValue));
+          }
+          replaceUnique('vite.config.mjs','/GOPsRally/v04/','/GOPsRally/v045b/');
+          replaceUnique('playwright.config.mjs','/GOPsRally/v04/','/GOPsRally/v045b/',2);
+          replaceUnique('scripts/build-offline.mjs','gopsrally-v04-foundation-','gopsrally-v045b-foundation-',2);
+          replaceUnique('v04/public/manifest.webmanifest','GOPs Rally v0.4 Drive','GOPs Rally v0.4.5b Test Drive');
+          NODE
+      - name: Verify physics and build for new isolated URL
+        run: |
+          npm ci
+          npm test
+          npm run build
+          test -f dist/v04/index.html
+          test -f dist/v04/sw.js
+          test -f dist/v04/manifest.webmanifest
+          grep -qF '/GOPsRally/v045b/assets/' dist/v04/index.html
+          grep -qF 'gopsrally-v045b-foundation-' dist/v04/sw.js
+          ! grep -qF '/GOPsRally/v04/assets/' dist/v04/index.html
+      - name: Run mobile/browser checks against v045b path
+        shell: bash
+        run: |
+          npx playwright install --with-deps chromium
+          export CHROMIUM_PATH="$(node --input-type=module -e "import {chromium} from '@playwright/test';console.log(chromium.executablePath())")"
+          npm run test:browser
+      - name: Upload isolated preview build for recovery
+        uses: actions/upload-artifact@v4
+        with:
+          name: gops-rally-v045b-test-site
+          path: dist/v04/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish ONLY /v045b/ to existing Pages source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/v04/index.html
+          test -f dist/v04/sw.js
+          cp -a dist/v04 /tmp/gops-rally-v045b-verified
+          git fetch origin main
+          # The temporary v045b path/cache edits are only build inputs; discard them
+          # after the verified dist copy, before switching to production main.
+          git reset --hard HEAD
+          git checkout -B isolated-v045b-pages origin/main
+          rm -rf -- v045b
+          mkdir -p v045b
+          cp -a /tmp/gops-rally-v045b-verified/. v045b/
+          git add -A -- v045b/
+          if git diff --cached --name-only | grep -Ev '^v045b/'; then
+            echo 'Refusing unexpected path change!'
+            exit 1
+          fi
+          if git diff --cached --quiet; then
+            echo 'v045b preview is already current'
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'preview: publish isolated v0.4.5b Android physics test'
+          git push origin HEAD:main

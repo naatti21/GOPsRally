@@ -34,7 +34,9 @@ export function createScene(canvas, surface) {
   // Lightweight roadside stakes make the physical gravel corridor readable on mobile.
   // They follow the same sampled terrain used by the Rapier collider, not a raised road ribbon.
   const nodes = surface.track.nodes;
-  const markerStep = 6;
+  // Extra near-field markers pass the camera at visibly different rates at 60 vs 100 km/h.
+  // Existing instancing preserves the same number of draw calls.
+  const markerStep = 4;
   const stakes = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.18, 0.85, 0.18),
     new THREE.MeshStandardMaterial({ color: 0xffedbd, roughness: 1 }),
@@ -219,8 +221,8 @@ export function createScene(canvas, surface) {
       ? chassis.position.clone().add(new THREE.Vector3(0, 32, 26))
       : chassis.position
           .clone()
-          .addScaledVector(forward, -(10 + Math.min(6, speed * 0.12)))
-          .add(new THREE.Vector3(0, 5.5 + Math.min(3, speed * 0.08), 0));
+          .addScaledVector(forward, -(11 + Math.min(2.5, speed * 0.075)))
+          .add(new THREE.Vector3(0, 5.5 + Math.min(1.5, speed * 0.045), 0));
     camera.position.lerp(
       wanted,
       snapCamera ? 1 : 1 - Math.exp(-Math.max(0, dt) * 7),

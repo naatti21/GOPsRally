@@ -1,0 +1,98 @@
+[
+  {
+    "version": "v044",
+    "sha": "ca746502855fddbac7a99101ff400437d672c78a",
+    "mode": "fixed",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 1.4512283811679818,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  },
+  {
+    "version": "v044",
+    "sha": "ca746502855fddbac7a99101ff400437d672c78a",
+    "mode": "chase",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 64.70083607093638,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  },
+  {
+    "version": "v045",
+    "sha": "9cc39de4c6616a82a69081fc83c0a0d656a4265f",
+    "mode": "fixed",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 1.4512283811679818,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  },
+  {
+    "version": "v045",
+    "sha": "9cc39de4c6616a82a69081fc83c0a0d656a4265f",
+    "mode": "chase",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 60.303337873035275,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  },
+  {
+    "version": "v045b",
+    "sha": "bac49764e38f3fd220b3af67a08035af5463836d",
+    "mode": "fixed",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 1.4512283811679818,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  },
+  {
+    "version": "v045b",
+    "sha": "bac49764e38f3fd220b3af67a08035af5463836d",
+    "mode": "chase",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 60.303337873035275,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  },
+  {
+    "version": "v046",
+    "sha": "bd5b3222c6d18014048dbc65d09c2566fa6446ed",
+    "mode": "fixed",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 1.4512283811679818,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  },
+  {
+    "version": "v046",
+    "sha": "bd5b3222c6d18014048dbc65d09c2566fa6446ed",
+    "mode": "chase",
+    "physicsTraceSha256": "234db5b7c5092a9155b810fdfcc19250809d80a46895f33338fa17468cd06b03",
+    "frames": 9000,
+    "cameraYawRateRms": 60.32163148703422,
+    "bodyHeadingRateRms": 69.41642644740702,
+    "carOutsideNdcFrames": 0,
+    "browser": "154.0.8037.57",
+    "rendering": "actual Chromium SwiftShader; drive every 60Hz record, render once/s; NOT device FPS"
+  }
+]

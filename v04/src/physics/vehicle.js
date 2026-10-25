@@ -4,7 +4,7 @@ import { driveIntent } from "../game/contracts.js";
 import { velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
 import { contactForces, CONTACT_TUNE } from "./contact-tire.js";
 import { SURFACE_GRIP } from "./tire.js";
-import { availableEngineForce, wheelDriveForce, cornerDriveManagement } from "./drive-profile.js";
+import { availableEngineForce, wheelDriveForce, cornerDriveManagement, surfaceDriveBudget } from "./drive-profile.js";
 import { stepWheelSpin, wheelSpeedometer } from "./wheel-spin.js";
 export const TUNE = Object.freeze({
   mass: 1200,
@@ -235,6 +235,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
         rear: i >= 2,
         drive: driveForce,
         brake: brakeForce,
+        driveBudget: surfaceDriveBudget(type),
         dt,
         mass: TUNE.mass,
       });

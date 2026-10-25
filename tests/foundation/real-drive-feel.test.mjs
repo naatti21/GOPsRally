@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {availableEngineForce, wheelDriveForce} from '../../v04/src/physics/drive-profile.js';
+import {availableEngineForce, wheelDriveForce, cornerDriveManagement} from '../../v04/src/physics/drive-profile.js';
 import {measureStraight,runArcadeTrace} from '../../scripts/arcade-dynamics-benchmark.mjs';
 import {chaseFov} from '../../v04/src/render/camera-response.js';
 
@@ -33,4 +33,19 @@ test('moderate steer-only slide remains possible and speed camera separates 60/1
  assert.ok(r.summary.longestModerateSeconds>.2);
  const difference=chaseFov(100/3.6)-chaseFov(60/3.6);
  assert.ok(difference>4&&difference<10);
+});
+
+test('corner torque control preserves straight acceleration and avoids abrupt extra rear saturation',()=>{
+ const straight=cornerDriveManagement(0,0);
+ const middle=cornerDriveManagement(.19,.05);
+ const turn=cornerDriveManagement(.38,.14);
+ const slide=cornerDriveManagement(.38,.3);
+ assert.deepEqual(straight,{throttleScale:1,rearShare:.6});
+ assert.ok(straight.throttleScale>middle.throttleScale);
+ assert.ok(middle.throttleScale>turn.throttleScale);
+ assert.ok(turn.throttleScale>slide.throttleScale);
+ assert.ok(slide.throttleScale>=.68);
+ assert.ok(turn.rearShare<=.52 && turn.rearShare>=.5);
+ for(const state of [straight,middle,turn,slide])
+  assert.ok([state.throttleScale,state.rearShare].every(Number.isFinite));
 });

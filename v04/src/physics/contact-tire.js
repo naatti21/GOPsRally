@@ -32,11 +32,12 @@ export function contactForces({
   rear = false,
   drive = 0,
   brake = 0,
+  driveBudget = 1,
   dt = 1 / 60,
   mass = 1200,
 }) {
   if (
-    ![angle, lateral, longitudinal, load, grip, drive, brake, dt, mass].every(
+    ![angle, lateral, longitudinal, load, grip, drive, brake, driveBudget, dt, mass].every(
       Number.isFinite,
     ) ||
     dt <= 0 ||
@@ -63,6 +64,14 @@ export function contactForces({
       ? -Math.sign(longitudinal) *
         Math.min(brake, (Math.abs(longitudinal) * mass) / (4 * dt))
       : drive;
+  // The always-on throttle can consume the whole low-grip friction circle,
+  // leaving no room for steering. On selected terrain, cap the requested
+  // engine share BEFORE combining with lateral force; never create grip.
+  // Actual applied impulses still obey the same mu * normal-load circle.
+  if (brake <= 0 && driveBudget < 1) {
+    const driveCap = limit * clamp(driveBudget, 0, 1);
+    fx = clamp(fx, -driveCap, driveCap);
+  }
   const scale = Math.min(1, limit / Math.max(1e-9, Math.hypot(fx, fy)));
   return {
     longitudinal: fx * scale,

@@ -11,6 +11,10 @@ test('rear friction cap only fades when speed and real steering/yaw demand justi
   assert.ok(rearCorneringFriction(1.6,25,.9,.4,.15)<1.25);
   assert.ok(rearCorneringFriction(1.6,25,.9,.4,.15)>.6);
   assert.ok(rearCorneringFriction(0.7,25,.9,.4,.15)<.7);
+  const initiating = rearCorneringFriction(1.6,25,-.8,.38,-.16);
+  const catching = rearCorneringFriction(1.6,25,-.8,-.38,-.16);
+  assert.ok(initiating < 1.2 && catching > 1.5,
+    'opposite wheel input must restore real rear tire force budget');
   assert.equal(rearCorneringFriction(1.6,Number.NaN,.2,.4,.1),0);
 });
 test('front keeps full cap; grounded rear consumes corner load as traction',async()=>{

@@ -5,6 +5,7 @@ import { velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
 import { contactForces, CONTACT_TUNE } from "./contact-tire.js";
 import { SURFACE_GRIP } from "./tire.js";
 import { availableEngineForce, wheelDriveForce, cornerDriveManagement } from "./drive-profile.js";
+import { stepWheelSpin, wheelSpeedometer } from "./wheel-spin.js";
 export const TUNE = Object.freeze({
   mass: 1200,
   centerOfMassY: -0.1,
@@ -92,6 +93,9 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     forwardImpulse: 0,
     limit: 0,
     relaxedAngle: 0,
+    omega: 0,
+    wheelRotation: 0,
+    wheelLimited: false,
   }));
   const direction = () =>
     new Vector3(0, 0, -1).applyQuaternion(body.rotation());
@@ -121,6 +125,9 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
         forwardImpulse: 0,
         limit: 0,
         relaxedAngle: 0,
+        omega: 0,
+        wheelRotation: 0,
+        wheelLimited: false,
       }),
     );
   }
@@ -170,7 +177,17 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     const impulses = [];
     for (let i = 0; i < 4; i++) {
       const state = tireState[i];
+      const driveForce = wheelDriveForce(engine, i, driveManagement.rearShare);
+      const brakeForce = !enabled || intent.brake ? TUNE.brakeForce / 4 : 0;
       if (!controller.wheelIsInContact(i)) {
+        const next = stepWheelSpin(
+          { omega: state.omega, rotation: state.wheelRotation },
+          {dt, radius:TUNE.radius, longitudinalSpeed:v, contact:false, load:0,
+            driveForce, brakeForce},
+        );
+        Object.assign(state, {
+          omega:next.omega, wheelRotation:next.rotation, wheelLimited:next.limited,
+        });
         Object.assign(state, {
           slipAngle: 0,
           sideImpulse: 0,
@@ -216,12 +233,22 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
         ),
         grip: SURFACE_GRIP[type] ?? SURFACE_GRIP[3],
         rear: i >= 2,
-        drive: wheelDriveForce(engine, i, driveManagement.rearShare),
-        brake: !enabled || intent.brake ? TUNE.brakeForce / 4 : 0,
+        drive: driveForce,
+        brake: brakeForce,
         dt,
         mass: TUNE.mass,
       });
+      const nextSpin = stepWheelSpin(
+        {omega:state.omega, rotation:state.wheelRotation},
+        {dt, radius:TUNE.radius, longitudinalSpeed:longitudinal, contact:true,
+          load:Math.min(controller.wheelMaxSuspensionForce(i),
+            Math.max(0,controller.wheelSuspensionForce(i))),
+          driveForce,brakeForce},
+      );
       Object.assign(state, {
+        omega:nextSpin.omega,
+        wheelRotation:nextSpin.rotation,
+        wheelLimited:nextSpin.limited,
         slipAngle: angle,
         sideGrip:
           force.retention * (i >= 2 ? 0.98 : 1) * (SURFACE_GRIP[type] ?? 0.43),
@@ -273,7 +300,10 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     return {
       position: { ...body.translation() },
       rotation: { ...orientation },
-      speed: speed(),
+      speed: speed(), // True body-forward component (physics and legacy contracts).
+      groundSpeedMps: Math.hypot(velocity.x,velocity.z),
+      wheelSpeedMps: wheelSpeedometer(tireState,TUNE.radius),
+      wheelLimiter: tireState.some(state=>state.wheelLimited),
       steer,
       rackAngle,
       lateralSpeed: localLateral,
@@ -287,7 +317,9 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
           Math.max(0, controller.wheelSuspensionForce(i)),
         ),
         rawSuspensionLoad: controller.wheelSuspensionForce(i),
-        rotation: controller.wheelRotation(i),
+        rotation: tireState[i].wheelRotation,
+        angularSpeed: tireState[i].omega,
+        wheelLimited: tireState[i].wheelLimited,
         steer: controller.wheelSteering(i),
         sideImpulse: tireState[i].sideImpulse,
         forwardImpulse: tireState[i].forwardImpulse,

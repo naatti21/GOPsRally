@@ -184,9 +184,12 @@ async function start() {
       : countdown > 0
         ? Math.ceil(countdown)
         : "";
-    const slipping = Math.abs(current.bodySlipAngle) > 0.17 && Math.abs(current.speed) > 8;
+    const slipDegrees = Math.round(Math.abs(current.bodySlipAngle) * 180 / Math.PI);
+    const slipLabel = slipDegrees >= 5 && Math.abs(current.speed) > 8
+      ? ` · SLIP ${slipDegrees}°`
+      : "";
     $("#status").textContent =
-      `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7${slipping ? " · SLIDE" : ""}`;
+      `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7${slipLabel}`;
     const mp = mapPoint(current.position);
     $("#map-car").setAttribute("cx", mp.x);
     $("#map-car").setAttribute("cy", mp.y);

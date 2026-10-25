@@ -1,0 +1,40 @@
+name: Opt-in long-run handling investigation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lab:long
+      - run: node scripts/long-run/reanalyze.mjs
+      - run: node scripts/long-run/sweep.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Identical-physics camera replay in actual Chromium
+        run: |
+          export CHROMIUM_PATH="$(node --input-type=module -e "import {chromium} from '@playwright/test';console.log(chromium.executablePath())")"
+          npm run lab:camera
+          CAMERA_VERSIONS=v046 CAMERA_HEADING_TAU=0.2 npm run lab:camera
+      - run: python -m pip install matplotlib==3.10.8
+      - run: python scripts/long-run/plot.py
+      - run: node scripts/long-run/report.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: long-run-60hz-evidence
+          path: |
+            lab-results/
+            docs/metrics/long-run/
+          if-no-files-found: error
+          retention-days: 14

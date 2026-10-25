@@ -15,6 +15,7 @@ import { createScene } from "./render/scene.js";
 import { makeClock } from "./game/contracts.js";
 import { makeLaps, RACE } from "./game/laps.js";
 import { bindDrivingControls } from "./game/input.js";
+import { outsideTerrain } from "./game/world-bounds.js";
 const $ = (s) => document.querySelector(s);
 async function start() {
   const began = performance.now(),
@@ -37,7 +38,8 @@ async function start() {
     lastTime = performance.now(),
     previous,
     current,
-    safeNode = 0;
+    safeNode = 0,
+    outsideWorld = false;
   let frames = 0,
     totalFrameMs = 0,
     maxFrameMs = 0,
@@ -89,6 +91,8 @@ async function start() {
     recover(true);
   }
   function recover(atStart = false) {
+    outsideWorld = false;
+    $("#go").disabled = false;
     const n = surface.track.nodes[safeNode],
       tx = n.tx * config.direction,
       tz = n.tz * config.direction;
@@ -106,6 +110,7 @@ async function start() {
   $("#start").onchange = configure;
   $("#direction").onchange = configure;
   $("#go").onclick = () => {
+    if (outsideWorld) return;
     running = true;
     countdown = 2;
     $("#go").disabled = true;
@@ -133,10 +138,20 @@ async function start() {
       previous = current;
       const active = running && countdown <= 0;
       if (running && countdown > 0) countdown = Math.max(0, countdown - step);
-      car.tick(step, input.read(), active);
-      physics.world.step();
-      current = car.snapshot();
-      if (active) {
+      if (!outsideWorld) {
+        car.tick(step, input.read(), active);
+        physics.world.step();
+        current = car.snapshot();
+      }
+      if (active && !outsideWorld) {
+        if (outsideTerrain(surface, current.position)) {
+          outsideWorld = true;
+          running = false;
+          input.clear();
+          laps.invalidate();
+          $("#go").disabled = true;
+          return;
+        }
         laps.update(current.position, step);
         // Recovery anchor advances locally only while upright and on road, never scans the whole route per frame.
         const up = new Vector3(0, 1, 0).applyQuaternion(current.rotation);
@@ -185,8 +200,9 @@ async function start() {
         ? Math.ceil(countdown)
         : "";
     const slipping = Math.abs(current.bodySlipAngle) > 0.17 && Math.abs(current.speed) > 8;
-    $("#status").textContent =
-      `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7${slipping ? " · SLIDE" : ""}`;
+    $("#status").textContent = outsideWorld
+      ? "OUTSIDE WORLD · PRESS RESET"
+      : `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7${slipping ? " · SLIDE" : ""}`;
     const mp = mapPoint(current.position);
     $("#map-car").setAttribute("cx", mp.x);
     $("#map-car").setAttribute("cy", mp.y);

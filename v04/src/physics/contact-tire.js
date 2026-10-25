@@ -1,11 +1,11 @@
 // A smooth, dissipative brush approximation; normalized load limits BOTH axes.
 // No road direction, drift mode, yaw torque or reference racing line enters it.
 export const CONTACT_TUNE = Object.freeze({
-  mu: 1.05,
-  frontSlope: 0.16,
+  mu: 1.07,
+  frontSlope: 0.145,
   rearSlope: 0.12,
-  frontLoss: 0.06,
-  rearLoss: 0.1,
+  frontLoss: 0.05,
+  rearLoss: 0.08,
   relaxationLength: 0.8,
 });
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -50,7 +50,7 @@ export function contactForces({
     0.8,
     1.1,
   );
-  const limit = CONTACT_TUNE.mu * grip * load * sensitivity * (rear ? 0.98 : 1);
+  const limit = CONTACT_TUNE.mu * grip * load * sensitivity * (rear ? 0.99 : 1);
   const curve = lateralResponse(angle, rear);
   let fy = -limit * curve.response;
   // At walking pace bound lateral damping so discrete integration cannot kick through zero.

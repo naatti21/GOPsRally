@@ -1,7 +1,7 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Vector3, Quaternion } from "three";
 import { driveIntent } from "../game/contracts.js";
-import { tireGrip, velocityAtWheel, measuredSlip, responsiveSteering, rearCorneringFriction } from "./tire.js";
+import { tireGrip, velocityAtWheel, measuredSlip, responsiveSteering, rearCorneringStiffnessScale } from "./tire.js";
 export const TUNE = Object.freeze({
   mass: 1200,
   centerOfMassY: -0.1,
@@ -148,14 +148,14 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       const angle = measuredSlip(lateral, longitudinal);
       const grip = tireGrip(angle, longitudinal, type, i >= 2);
       const surfaceFriction = [1.6, 1.25, 0.95, 0.7][type] ?? 0.7;
-      // The physical wheel normal force sets the available impulse budget.
-      // At sustained cornering load rear traction runs out *before* huge
-      // sideways slip appears, so LEFT/RIGHT alone can induce oversteer.
-      const frictionCap = i < 2 ? surfaceFriction :
-        rearCorneringFriction(surfaceFriction, v, yawRateBeforeSteer, steer, bodySideSlip);
-      Object.assign(tireState[i], { slipAngle: angle, sideGrip: grip, surface: type, frictionCap });
-      controller.setWheelSideFrictionStiffness(i, grip);
-      controller.setWheelFrictionSlip(i, frictionCap);
+      // Scale only Rapier's real side-aligning impulse while retaining its
+      // separate suspension-force friction cap and all engine/brake forces.
+      const rearScale = i < 2 ? 1 :
+        rearCorneringStiffnessScale(v, yawRateBeforeSteer, steer, bodySideSlip);
+      const sideGrip = grip * rearScale;
+      Object.assign(tireState[i], { slipAngle: angle, sideGrip, surface: type, frictionCap: surfaceFriction });
+      controller.setWheelSideFrictionStiffness(i, sideGrip);
+      controller.setWheelFrictionSlip(i, surfaceFriction);
       controller.setWheelSteering(i, i < 2 ? -steer : 0);
       controller.setWheelEngineForce(i, engine / 4);
       controller.setWheelBrake(

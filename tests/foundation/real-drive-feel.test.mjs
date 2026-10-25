@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {availableEngineForce, wheelDriveForce, cornerDriveManagement} from '../../v04/src/physics/drive-profile.js';
 import {measureStraight,runArcadeTrace} from '../../scripts/arcade-dynamics-benchmark.mjs';
 import {chaseFov} from '../../v04/src/render/camera-response.js';
+import {runCornerTrial} from '../../scripts/corner-line-benchmark.mjs';
 
 test('automatic acceleration uses real contact forces with useful midrange torque',()=>{
  const f0=availableEngineForce(0), f60=availableEngineForce(60/3.6),f100=availableEngineForce(100/3.6);
@@ -48,4 +49,12 @@ test('corner torque control preserves straight acceleration and avoids abrupt ex
  assert.ok(turn.rearShare<=.52 && turn.rearShare>=.5);
  for(const state of [straight,middle,turn,slide])
   assert.ok([state.throttleScale,state.rearShare].every(Number.isFinite));
+});
+
+test('extra automatic torque still permits a legal tight corner with an actual four-wheel trajectory',()=>{
+ const c=runCornerTrial({lineId:'center',initialSpeedKmh:83});
+ assert.equal(c.brakeInCornerFrames,0);
+ assert.equal(c.validFinish,true,`corner should remain on road; max slip ${c.maxBodySlipDegrees}°, offroad ${c.wheelOffRoadSeconds}s`);
+ assert.ok(c.maxBodySlipDegrees<23,`no snap spin: ${c.maxBodySlipDegrees}°`);
+ assert.ok(c.exitKmh>=62);
 });

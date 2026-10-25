@@ -185,3 +185,23 @@ test('portrait Chase has restrained speed FOV and visible car through a steer/co
  for(let i=0;i<frames.length;i++){const f=frames[i];expect(f.finite).toBe(true);expect(Math.abs(f.car.x)).toBeLessThan(.72);expect(f.car.y).toBeGreaterThan(-.60);expect(f.car.y).toBeLessThan(.75);expect(f.fov).toBeGreaterThanOrEqual(62);expect(f.fov).toBeLessThanOrEqual(74);if(i&&f.time-frames[i-1].time<50)expect(Math.abs(f.fov-frames[i-1].fov)).toBeLessThan(.5)}
  await page.screenshot({path:'test-results/arcade-chase-portrait.png'});await test.info().attach('camera-samples',{body:JSON.stringify({slow,before,frames}),contentType:'application/json'});
 });
+
+
+test('wheel-speed HUD is separate from physical chassis velocity and respects limiter',async({page})=>{
+  await page.setViewportSize({width:393,height:800});
+  await page.goto('./');
+  await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:20000});
+  await page.locator('#go').click();
+  await expect.poll(()=>page.evaluate(()=>rallyDrive.snapshot().wheelSpeedMps),{timeout:12000}).toBeGreaterThan(3);
+  const m=await page.evaluate(()=>{
+    const a=rallyDrive.snapshot();
+    return {indicated:Number(document.querySelector('#speed').textContent),
+      expected:Math.round(a.wheelSpeedMps*3.6),ground:a.groundSpeedMps,
+      body:a.speed,limiter:a.wheelLimiter,
+      wheelSpeeds:a.wheels.map(w=>w.angularSpeed)};
+  });
+  expect(m.indicated).toBeGreaterThan(0);
+  expect(Math.abs(m.indicated-m.expected)).toBeLessThan(5);
+  expect(Number.isFinite(m.ground)&&Number.isFinite(m.body)).toBe(true);
+  expect(m.wheelSpeeds.every(Number.isFinite)).toBe(true);
+});

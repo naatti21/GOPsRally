@@ -51,34 +51,24 @@ export function responsiveSteering(input, speedMps, bodySlipAngle = 0) {
 }
 
 /**
- * Dynamic rear friction *budget*, implemented by Rapier's real wheel impulse
- * limiter: maxImpulse = suspensionForce * timestep * frictionSlip.
+ * Soft arcade-side cornering response. Rapier's direct per-wheel friction
+ * impulse CAP remains untouched; decouple lateral response from wheel engine
+ * and braking to avoid a grip-on/grip-off bifurcation under sustained steering.
  *
- * The native raycast vehicle otherwise keeps near-infinite lateral authority
- * until a LARGE instantaneous tire slip.  Steer-only load demand consumes
- * rear grip progressively above moderate speed, while measured yaw makes
- * the limit persist into the slide.  No fake yaw, chassis rotation or position.
- *
- * demandG is intentionally an arcade tuning proxy, not a tyre data sheet.
+ * More lateral demand reduces the *linear* rear aligning response. This uses
+ * only physical wheel impulses; no injected yaw or pose correction.
  */
-export function rearCorneringFriction(baseFriction, speedMps, yawRate, steer, bodySlipAngle) {
-  if (![baseFriction, speedMps, yawRate, steer, bodySlipAngle].every(Number.isFinite)) return 0;
-  if (baseFriction <= 0) return 0;
-  const speed = Math.abs(speedMps);
-  if (speed < 11 || (Math.abs(steer) < 0.04 && Math.abs(bodySlipAngle) < 0.055))
-    return baseFriction;
-  // Pure instantaneous bicycle geometry over-predicts digital turn demand.
-  // Retain a small feed-forward and weight it against actually measured yaw.
-  const geometricG = (speed * speed * Math.tan(Math.min(0.6, Math.abs(steer))) / 2.6) / 9.81;
-  const turnG = Math.abs(speed * yawRate) / 9.81;
-  const demand = Math.max(turnG, geometricG * 0.13);
-  const x = Math.min(1, Math.max(0, (demand - 0.52) / 1.18));
-  const blend = x*x*(3 - 2*x);
-  const speedFade = Math.min(1, Math.max(0, (speed - 14) / 18));
-  // Opposite input to actual body yaw is the player's countersteer.
-  // Release the rear impulse limit for an earned catch, otherwise the very
-  // loss of grip that starts a slide prevents recovering it.
-  const recovering = Math.abs(steer)>0.04 && Math.abs(yawRate)>0.15 &&
-    Math.abs(bodySlipAngle)>0.07 && Math.sign(steer)===Math.sign(yawRate);
-  return baseFriction * (1 - (recovering ? 0.02 : 0.26) * blend * speedFade);
+export function rearCorneringStiffnessScale(speedMps, yawRate, steer, bodySlipAngle) {
+  if (![speedMps,yawRate,steer,bodySlipAngle].every(Number.isFinite)) return 1;
+  const speed=Math.abs(speedMps);
+  if(speed<12 || (Math.abs(steer)<0.04&&Math.abs(bodySlipAngle)<0.055)) return 1;
+  const geometricG=(speed*speed*Math.tan(Math.min(0.6,Math.abs(steer)))/2.6)/9.81;
+  const actualG=Math.abs(speed*yawRate)/9.81;
+  const demand=Math.max(actualG,geometricG*0.11);
+  const x=Math.min(1,Math.max(0,(demand-0.50)/1.4));
+  const eased=x*x*(3-2*x);
+  const speedFade=Math.min(1,Math.max(0,(speed-12)/18));
+  const recovery=Math.abs(steer)>0.04&&Math.abs(yawRate)>0.15&&
+    Math.abs(bodySlipAngle)>0.07&&Math.sign(steer)===Math.sign(yawRate);
+  return 1-(recovery ? 0.06 : 0.50)*eased*speedFade;
 }

@@ -42,7 +42,9 @@ export function measuredSlip(lateralVelocity, longitudinalVelocity) {
 export function responsiveSteering(input, speedMps, bodySlipAngle = 0) {
   if (![input, speedMps, bodySlipAngle].every(Number.isFinite)) return 0;
   const direction = Math.max(-1, Math.min(1, input));
-  const base = 0.64 / (1 + Math.abs(speedMps) / 36);
+  // Prevent excessive wheel angle at speed: when the tire has saturated,
+  // more lock cannot create more side force, only delay smooth recovery.
+  const base = 0.64 / (1 + Math.abs(speedMps) / 33);
   const isCatch = direction !== 0 &&
     Math.sign(direction) === Math.sign(bodySlipAngle) &&
     Math.abs(bodySlipAngle) > 0.09;

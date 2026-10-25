@@ -49,3 +49,31 @@ export function responsiveSteering(input, speedMps, bodySlipAngle = 0) {
   const bonus = isCatch ? Math.min(0.26, (Math.abs(bodySlipAngle) - 0.09) * 0.9) : 0;
   return direction * Math.min(0.78, base * (1 + bonus));
 }
+
+/**
+ * Dynamic rear friction *budget*, implemented by Rapier's real wheel impulse
+ * limiter: maxImpulse = suspensionForce * timestep * frictionSlip.
+ *
+ * The native raycast vehicle otherwise keeps near-infinite lateral authority
+ * until a LARGE instantaneous tire slip.  Steer-only load demand consumes
+ * rear grip progressively above moderate speed, while measured yaw makes
+ * the limit persist into the slide.  No fake yaw, chassis rotation or position.
+ *
+ * demandG is intentionally an arcade tuning proxy, not a tyre data sheet.
+ */
+export function rearCorneringFriction(baseFriction, speedMps, yawRate, steer, bodySlipAngle) {
+  if (![baseFriction, speedMps, yawRate, steer, bodySlipAngle].every(Number.isFinite)) return 0;
+  if (baseFriction <= 0) return 0;
+  const speed = Math.abs(speedMps);
+  if (speed < 11 || (Math.abs(steer) < 0.04 && Math.abs(bodySlipAngle) < 0.055))
+    return baseFriction;
+  // Pure instantaneous bicycle geometry over-predicts digital turn demand.
+  // Retain a small feed-forward and weight it against actually measured yaw.
+  const geometricG = (speed * speed * Math.tan(Math.min(0.6, Math.abs(steer))) / 2.6) / 9.81;
+  const turnG = Math.abs(speed * yawRate) / 9.81;
+  const demand = Math.max(turnG, geometricG * 0.13);
+  const x = Math.min(1, Math.max(0, (demand - 0.52) / 1.18));
+  const blend = x*x*(3 - 2*x);
+  const speedFade = Math.min(1, Math.max(0, (speed - 11) / 9));
+  return baseFriction * (1 - 0.6 * blend * speedFade);
+}

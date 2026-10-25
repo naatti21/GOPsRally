@@ -187,15 +187,16 @@ test("real braking/acceleration/cornering change individual spring loads and cha
 });
 test("Chase FOV stays modest and eases consistently across frame rates; heading takes shortest path", () => {
   assert.equal(chaseFov(0), 62);
-  assert.equal(chaseFov(50), 68);
-  assert.equal(chaseFov(90), 68);
-  assert.ok(chaseFov(25) > 62 && chaseFov(25) < 68);
+  assert.equal(chaseFov(50), 74);
+  assert.equal(chaseFov(90), 74);
+  assert.ok(chaseFov(25) > 62 && chaseFov(25) < 74);
+  assert.ok(chaseFov(100/3.6)-chaseFov(60/3.6)>4, '60 and 100 kmh must look observably different');
   let a = 62,
     b = 62;
-  for (let i = 0; i < 60; i++) a = easeFov(a, 68, 1 / 60);
-  for (let i = 0; i < 120; i++) b = easeFov(b, 68, 1 / 120);
+  for (let i = 0; i < 60; i++) a = easeFov(a, 74, 1 / 60);
+  for (let i = 0; i < 120; i++) b = easeFov(b, 74, 1 / 120);
   assert.ok(Math.abs(a - b) < 1e-10);
-  assert.ok(a < 68);
+  assert.ok(a < 74);
   const h = chaseHeading(
     Math.PI - 0.01,
     -Math.PI + 0.01,

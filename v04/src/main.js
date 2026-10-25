@@ -218,6 +218,7 @@ async function start() {
         cameraFinite: view.camera.matrixWorld.elements.every(Number.isFinite),
         carNdc: view.carNdc(),
         cameraDistance: view.cameraDistance(),
+          cameraFov:view.camera.fov,
       },
       trackLength: surface.track.length,
     }),

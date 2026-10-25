@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { WHEELS, TUNE } from "../physics/vehicle.js";
 import { sampleSurface } from "../world/surface.js";
+import { chaseFov, easeFov, chaseHeading } from "./camera-response.js";
 export function createScene(canvas, surface) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -33,7 +34,7 @@ export function createScene(canvas, surface) {
   // Lightweight roadside stakes make the physical gravel corridor readable on mobile.
   // They follow the same sampled terrain used by the Rapier collider, not a raised road ribbon.
   const nodes = surface.track.nodes;
-  const markerStep = 9;
+  const markerStep = 6;
   const stakes = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.18, 0.85, 0.18),
     new THREE.MeshStandardMaterial({ color: 0xffedbd, roughness: 1 }),
@@ -86,6 +87,7 @@ export function createScene(canvas, surface) {
   );
   probe.visible = false;
   scene.add(probe);
+  let filteredHeading = 0;
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 600);
   let mode = "fixed",
     anchor = null,
@@ -188,7 +190,21 @@ export function createScene(canvas, surface) {
     );
     forward.y = 0;
     forward.normalize();
-    const speed = Math.abs(pose.speed);
+    const speed = Math.hypot(pose.speed, pose.lateralSpeed ?? 0);
+    const bodyHeading = Math.atan2(forward.x, -forward.z);
+    const courseHeading =
+      bodyHeading +
+      Math.atan2(pose.lateralSpeed ?? 0, Math.max(3, Math.abs(pose.speed)));
+    filteredHeading = chaseHeading(
+      filteredHeading,
+      bodyHeading,
+      courseHeading,
+      speed,
+      dt,
+      snapCamera,
+    );
+    if (mode === "chase")
+      forward.set(Math.sin(filteredHeading), 0, -Math.cos(filteredHeading));
     // Fixed = a zoomed-out, stable compass-facing camera that TRACKS the car.
     // Do not project the look-at point 7 m ahead of the car: in portrait mode
     // that moves the vehicle behind the HUD/steering controls or off-screen.
@@ -209,7 +225,9 @@ export function createScene(canvas, surface) {
       wanted,
       snapCamera ? 1 : 1 - Math.exp(-Math.max(0, dt) * 7),
     );
-    const newFov = fixed ? 58 : 62;
+    const newFov = fixed
+      ? 58
+      : easeFov(camera.fov, chaseFov(speed), dt, snapCamera);
     if (camera.fov !== newFov) {
       camera.fov = newFov;
       camera.updateProjectionMatrix();

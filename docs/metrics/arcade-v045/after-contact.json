@@ -1,0 +1,473 @@
+{
+  "physicsModule": "working-tree",
+  "units": "degrees, seconds, meters, km/h, N; simulated time; no seeded slip/yaw",
+  "scenarios": [
+    {
+      "name": "release",
+      "settings": {
+        "speedKmh": 70,
+        "pulse": 0.65,
+        "counter": 0,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 9.118,
+      "peakUnfoldedSlip": 9.118,
+      "moderateSeconds": 0.617,
+      "longestModerateSeconds": 0.617,
+      "peakYaw": 39.878,
+      "catchSlip": -9.102,
+      "catchYaw": -25.882,
+      "finalSlip": 0.001,
+      "finalYaw": 0.003,
+      "lateralMeters": 36.928,
+      "pathLength": 94.616,
+      "exitKmh": 104.47,
+      "peakPitch": 0.561,
+      "peakRoll": 3.401,
+      "minContacts": 4,
+      "loadRange": [
+        505.8,
+        5384.8
+      ],
+      "travelRange": [
+        0.3574,
+        0.4733
+      ]
+    },
+    {
+      "name": "short-catch",
+      "settings": {
+        "speedKmh": 70,
+        "pulse": 0.65,
+        "counter": 0.1,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 8.682,
+      "peakUnfoldedSlip": 8.682,
+      "moderateSeconds": 0.367,
+      "longestModerateSeconds": 0.367,
+      "peakYaw": 39.878,
+      "catchSlip": -7.297,
+      "catchYaw": 4.459,
+      "finalSlip": 0,
+      "finalYaw": -0.002,
+      "lateralMeters": 27.731,
+      "pathLength": 96.344,
+      "exitKmh": 106.198,
+      "peakPitch": 0.568,
+      "peakRoll": 3.361,
+      "minContacts": 4,
+      "loadRange": [
+        552.9,
+        5339.4
+      ],
+      "travelRange": [
+        0.3602,
+        0.4704
+      ]
+    },
+    {
+      "name": "overcorrect",
+      "settings": {
+        "speedKmh": 70,
+        "pulse": 0.65,
+        "counter": 1.15,
+        "counterDelay": 0.12,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 37.91,
+      "peakUnfoldedSlip": 37.91,
+      "moderateSeconds": 0.967,
+      "longestModerateSeconds": 0.45,
+      "peakYaw": 78.144,
+      "catchSlip": -6.636,
+      "catchYaw": 39.744,
+      "finalSlip": -1.283,
+      "finalYaw": -0.128,
+      "lateralMeters": -12.27,
+      "pathLength": 74.477,
+      "exitKmh": 64.416,
+      "peakPitch": 0.619,
+      "peakRoll": 3.55,
+      "minContacts": 4,
+      "loadRange": [
+        364,
+        5522.6
+      ],
+      "travelRange": [
+        0.3525,
+        0.4782
+      ]
+    },
+    {
+      "name": "overdrive",
+      "settings": {
+        "speedKmh": 70,
+        "pulse": 2.5,
+        "counter": 0,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 9.276,
+      "peakUnfoldedSlip": 9.276,
+      "moderateSeconds": 1.05,
+      "longestModerateSeconds": 0.917,
+      "peakYaw": 39.878,
+      "catchSlip": -6.098,
+      "catchYaw": -18.383,
+      "finalSlip": -0.116,
+      "finalYaw": -0.134,
+      "lateralMeters": 53.37,
+      "pathLength": 84.018,
+      "exitKmh": 89.419,
+      "peakPitch": 0.56,
+      "peakRoll": 3.518,
+      "minContacts": 4,
+      "loadRange": [
+        599.3,
+        5292.2
+      ],
+      "travelRange": [
+        0.3592,
+        0.4715
+      ]
+    },
+    {
+      "name": "release",
+      "settings": {
+        "speedKmh": 100,
+        "pulse": 0.65,
+        "counter": 0,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 12.625,
+      "peakUnfoldedSlip": 12.625,
+      "moderateSeconds": 0.967,
+      "longestModerateSeconds": 0.967,
+      "peakYaw": 38.81,
+      "catchSlip": -12.462,
+      "catchYaw": -23.427,
+      "finalSlip": -0.01,
+      "finalYaw": 0.002,
+      "lateralMeters": 39.388,
+      "pathLength": 120.377,
+      "exitKmh": 122.62,
+      "peakPitch": 0.463,
+      "peakRoll": 3.489,
+      "minContacts": 4,
+      "loadRange": [
+        497.2,
+        5392.3
+      ],
+      "travelRange": [
+        0.3562,
+        0.4746
+      ]
+    },
+    {
+      "name": "short-catch",
+      "settings": {
+        "speedKmh": 100,
+        "pulse": 0.65,
+        "counter": 0.1,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 11.731,
+      "peakUnfoldedSlip": 11.731,
+      "moderateSeconds": 0.667,
+      "longestModerateSeconds": 0.667,
+      "peakYaw": 38.81,
+      "catchSlip": -11.055,
+      "catchYaw": -3.593,
+      "finalSlip": 0,
+      "finalYaw": 0.022,
+      "lateralMeters": 30.931,
+      "pathLength": 122.597,
+      "exitKmh": 124.952,
+      "peakPitch": 0.462,
+      "peakRoll": 3.452,
+      "minContacts": 4,
+      "loadRange": [
+        555.9,
+        5335.9
+      ],
+      "travelRange": [
+        0.3596,
+        0.4711
+      ]
+    },
+    {
+      "name": "overcorrect",
+      "settings": {
+        "speedKmh": 100,
+        "pulse": 0.65,
+        "counter": 1.15,
+        "counterDelay": 0.12,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 68.608,
+      "peakUnfoldedSlip": 68.608,
+      "moderateSeconds": 0.8,
+      "longestModerateSeconds": 0.633,
+      "peakYaw": 91.514,
+      "catchSlip": -10.328,
+      "catchYaw": 34.094,
+      "finalSlip": 39.001,
+      "finalYaw": -18.572,
+      "lateralMeters": -5.331,
+      "pathLength": 93.458,
+      "exitKmh": 37.597,
+      "peakPitch": 0.584,
+      "peakRoll": 3.542,
+      "minContacts": 4,
+      "loadRange": [
+        348.8,
+        5538
+      ],
+      "travelRange": [
+        0.3519,
+        0.4788
+      ]
+    },
+    {
+      "name": "overdrive",
+      "settings": {
+        "speedKmh": 100,
+        "pulse": 2.5,
+        "counter": 0,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 13.004,
+      "peakUnfoldedSlip": 13.004,
+      "moderateSeconds": 1.767,
+      "longestModerateSeconds": 1.267,
+      "peakYaw": 38.81,
+      "catchSlip": -7.848,
+      "catchYaw": -17.126,
+      "finalSlip": -0.168,
+      "finalYaw": -1.392,
+      "lateralMeters": 56.01,
+      "pathLength": 110.877,
+      "exitKmh": 108.728,
+      "peakPitch": 0.476,
+      "peakRoll": 3.583,
+      "minContacts": 4,
+      "loadRange": [
+        609,
+        5283.2
+      ],
+      "travelRange": [
+        0.3591,
+        0.4717
+      ]
+    },
+    {
+      "name": "release",
+      "settings": {
+        "speedKmh": 126,
+        "pulse": 0.65,
+        "counter": 0,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 15.665,
+      "peakUnfoldedSlip": 15.665,
+      "moderateSeconds": 1.267,
+      "longestModerateSeconds": 1.267,
+      "peakYaw": 39.125,
+      "catchSlip": -15.007,
+      "catchYaw": -24.036,
+      "finalSlip": 0.005,
+      "finalYaw": -0.183,
+      "lateralMeters": 42.591,
+      "pathLength": 142.096,
+      "exitKmh": 137.474,
+      "peakPitch": 0.384,
+      "peakRoll": 3.544,
+      "minContacts": 4,
+      "loadRange": [
+        497.4,
+        5389.4
+      ],
+      "travelRange": [
+        0.3558,
+        0.4749
+      ]
+    },
+    {
+      "name": "short-catch",
+      "settings": {
+        "speedKmh": 126,
+        "pulse": 0.65,
+        "counter": 0.1,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 14.036,
+      "peakUnfoldedSlip": 14.036,
+      "moderateSeconds": 0.933,
+      "longestModerateSeconds": 0.933,
+      "peakYaw": 39.125,
+      "catchSlip": -13.919,
+      "catchYaw": -10.457,
+      "finalSlip": -0.022,
+      "finalYaw": -0.038,
+      "lateralMeters": 35.069,
+      "pathLength": 144.711,
+      "exitKmh": 140.403,
+      "peakPitch": 0.383,
+      "peakRoll": 3.506,
+      "minContacts": 4,
+      "loadRange": [
+        521.5,
+        5355.1
+      ],
+      "travelRange": [
+        0.3574,
+        0.4733
+      ]
+    },
+    {
+      "name": "overcorrect",
+      "settings": {
+        "speedKmh": 126,
+        "pulse": 0.65,
+        "counter": 1.15,
+        "counterDelay": 0.12,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 84.593,
+      "peakUnfoldedSlip": 96.372,
+      "moderateSeconds": 0.883,
+      "longestModerateSeconds": 0.733,
+      "peakYaw": 99.488,
+      "catchSlip": -13.558,
+      "catchYaw": 24.482,
+      "finalSlip": 80.118,
+      "finalYaw": -9.523,
+      "lateralMeters": 0.201,
+      "pathLength": 114.692,
+      "exitKmh": 0.229,
+      "peakPitch": 0.634,
+      "peakRoll": 3.544,
+      "minContacts": 4,
+      "loadRange": [
+        320.4,
+        5566.3
+      ],
+      "travelRange": [
+        0.3513,
+        0.4795
+      ]
+    },
+    {
+      "name": "overdrive",
+      "settings": {
+        "speedKmh": 126,
+        "pulse": 2.5,
+        "counter": 0,
+        "counterDelay": 0,
+        "duration": 4,
+        "brake": false
+      },
+      "peakSlip": 16.339,
+      "peakUnfoldedSlip": 16.339,
+      "moderateSeconds": 2,
+      "longestModerateSeconds": 1.55,
+      "peakYaw": 39.125,
+      "catchSlip": -7.788,
+      "catchYaw": -19.942,
+      "finalSlip": 0.098,
+      "finalYaw": -2.486,
+      "lateralMeters": 56.827,
+      "pathLength": 133.619,
+      "exitKmh": 124.939,
+      "peakPitch": 0.409,
+      "peakRoll": 3.614,
+      "minContacts": 4,
+      "loadRange": [
+        656.8,
+        5230.1
+      ],
+      "travelRange": [
+        0.3595,
+        0.4713
+      ]
+    }
+  ],
+  "straight": [
+    {
+      "mode": "0–100 km/h",
+      "reached": true,
+      "seconds": 7.267,
+      "distanceMeters": 113.233,
+      "peakPitch": 0.842,
+      "maxAxleLoadDifferenceN": 3677.8
+    },
+    {
+      "mode": "70 km/h to <0.5 m/s",
+      "reached": true,
+      "seconds": 2.133,
+      "distanceMeters": 20.957,
+      "peakPitch": 1.406,
+      "maxAxleLoadDifferenceN": 5809.3
+    },
+    {
+      "mode": "100 km/h to <0.5 m/s",
+      "reached": true,
+      "seconds": 3.05,
+      "distanceMeters": 42.511,
+      "peakPitch": 1.406,
+      "maxAxleLoadDifferenceN": 5809.3
+    },
+    {
+      "mode": "180 km/h to <0.5 m/s",
+      "reached": true,
+      "seconds": 5.4,
+      "distanceMeters": 133.557,
+      "peakPitch": 1.406,
+      "maxAxleLoadDifferenceN": 5809.5
+    }
+  ],
+  "braking": {
+    "peakSlip": 0,
+    "peakUnfoldedSlip": 0,
+    "moderateSeconds": 0,
+    "longestModerateSeconds": 0,
+    "peakYaw": 0,
+    "catchSlip": 0,
+    "catchYaw": 0,
+    "finalSlip": 0,
+    "finalYaw": 0,
+    "lateralMeters": 0,
+    "pathLength": 36.841,
+    "exitKmh": 35.003,
+    "peakPitch": 1.406,
+    "peakRoll": 0,
+    "minContacts": 4,
+    "loadRange": [
+      1431,
+      4391.6
+    ],
+    "travelRange": [
+      0.3834,
+      0.4472
+    ]
+  }
+}

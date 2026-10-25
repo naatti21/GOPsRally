@@ -74,11 +74,11 @@ export function rearCorneringFriction(baseFriction, speedMps, yawRate, steer, bo
   const demand = Math.max(turnG, geometricG * 0.13);
   const x = Math.min(1, Math.max(0, (demand - 0.52) / 1.18));
   const blend = x*x*(3 - 2*x);
-  const speedFade = Math.min(1, Math.max(0, (speed - 11) / 9));
+  const speedFade = Math.min(1, Math.max(0, (speed - 14) / 18));
   // Opposite input to actual body yaw is the player's countersteer.
   // Release the rear impulse limit for an earned catch, otherwise the very
   // loss of grip that starts a slide prevents recovering it.
   const recovering = Math.abs(steer)>0.04 && Math.abs(yawRate)>0.15 &&
     Math.abs(bodySlipAngle)>0.07 && Math.sign(steer)===Math.sign(yawRate);
-  return baseFriction * (1 - (recovering ? 0.05 : 0.6) * blend * speedFade);
+  return baseFriction * (1 - (recovering ? 0.02 : 0.26) * blend * speedFade);
 }

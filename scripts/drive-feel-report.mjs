@@ -14,13 +14,20 @@ const turns=[70,100,126].flatMap(speedKmh=>inputs.map(pulse=>{
    exitKmh:s.summary.exitKmh,unfoldedMaxDegrees:s.summary.peakUnfoldedSlip,
    finalYawDegreesPerSecond:s.summary.finalYaw};
 }));
-const corner=runCornerTrial({lineId:'center',initialSpeedKmh:83});
+const corners=[0.7,0.8,0.9,1].map(approachSpeedFactor=>runCornerTrial({
+  lineId:'center',initialSpeedKmh:83,approachSpeedFactor
+}));
+const corner=corners.at(-1);
 const out={
  physicsVersion:RACE.physics_version,
  measured0to100Seconds:straight.find(x=>x.mode==='0–100 km/h')?.seconds,
  stopFrom100Meters:straight.find(x=>x.mode.startsWith('100 km/h'))?.distanceMeters,
  chaseCameraDegrees:{at60:chaseFov(60/3.6),at100:chaseFov(100/3.6),at140:chaseFov(140/3.6)},
  steerOnlyNoBrake:turns,
+ approachOnlyCornerSpeedPlans:corners.map(c=>({speedFactor:c.approachSpeedFactor,
+   validFinish:c.validFinish,entryKmh:c.cornerEntryKmh,exitKmh:c.exitKmh,
+   wheelOffRoadSeconds:c.wheelOffRoadSeconds,peakSlipDegrees:c.maxBodySlipDegrees,
+   timeSeconds:c.elapsedSeconds,brakeInCornerFrames:c.brakeInCornerFrames})),
  legal90degreeCorner:{elapsedSeconds:corner.elapsedSeconds,validFinish:corner.validFinish,
    peakSlipDegrees:corner.maxBodySlipDegrees,exitKmh:corner.exitKmh,
    wheelOffRoadSeconds:corner.wheelOffRoadSeconds,brakeInCornerFrames:corner.brakeInCornerFrames},

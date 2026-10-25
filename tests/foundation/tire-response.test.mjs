@@ -33,7 +33,9 @@ test("rear tires progressively lose more lateral grip than front under high slip
     assert.ok(rearSliding / rearStraight < frontSliding / frontStraight);
     assert.ok(rearStraight > rearSliding * 2);
   }
-  assert.ok(tireGrip(0.4, 25, 3, true) < tireGrip(0.4, 25, 0, true) * 0.5);
+  // Grass remains materially weaker than compact even after softening the
+  // shoulder-to-grass cliff; the old 0.5 ratio was calibrated to grass=0.43.
+  assert.ok(tireGrip(0.4, 25, 3, true) < tireGrip(0.4, 25, 0, true) * 0.65);
   assert.equal(tireGrip(Number.NaN, 25, 0, true), 0);
   assert.ok(tireGrip(0.4, 0, 0, true) > tireGrip(0.4, 25, 0, true));
 });

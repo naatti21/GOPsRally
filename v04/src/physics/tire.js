@@ -1,7 +1,10 @@
 // Historical v0.4.4 native-stiffness curve (tireGrip), retained for baseline
 // regression comparisons. v0.4.5 applies forces in contact-tire.js instead.
 // The slip, point-velocity and steering helpers below remain shared production code.
-export const SURFACE_GRIP = Object.freeze([1, 0.79, 0.64, 0.43]);
+// Off-road remains slower/looser than compact gravel, but grass must not feel
+// like ice: narrow the shoulder (0.64) -> grass drop from 0.21 to 0.06.
+// A/B against the archived 0.43 baseline before approving any mobile release.
+export const SURFACE_GRIP = Object.freeze([1, 0.79, 0.64, 0.58]);
 export const AXLE_GRIP = Object.freeze({ front: 1.0, rear: 0.78 });
 
 export function tireGrip(slipAngle, groundSpeed, surfaceType, rear = false) {

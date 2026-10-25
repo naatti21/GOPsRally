@@ -8,9 +8,9 @@ import { runSlideTrial } from '../../scripts/physics-line-lab.mjs';
 test('rear friction cap only fades when speed and real steering/yaw demand justify it',()=>{
   assert.equal(rearCorneringFriction(1.6,5,1,.6,.4),1.6);
   assert.equal(rearCorneringFriction(1.6,25,0,0,0),1.6);
-  assert.ok(rearCorneringFriction(1.6,25,.9,.4,.15)<1.25);
-  assert.ok(rearCorneringFriction(1.6,25,.9,.4,.15)>.6);
-  assert.ok(rearCorneringFriction(0.7,25,.9,.4,.15)<.7);
+  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)<1.25);
+  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)>.6);
+  assert.ok(rearCorneringFriction(0.7,25,-.9,.4,-.15)<.7);
   const initiating = rearCorneringFriction(1.6,25,-.8,.38,-.16);
   const catching = rearCorneringFriction(1.6,25,-.8,-.38,-.16);
   assert.ok(initiating < 1.2 && catching > 1.5,

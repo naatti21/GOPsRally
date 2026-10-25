@@ -3,9 +3,9 @@
 export const CONTACT_TUNE = Object.freeze({
   mu: 1.05,
   frontSlope: 0.16,
-  rearSlope: 0.12,
+  rearSlope: 0.14,
   frontLoss: 0.06,
-  rearLoss: 0.1,
+  rearLoss: 0.14,
   relaxationLength: 0.8,
 });
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));

@@ -33,3 +33,13 @@ export function cornerDriveManagement(steeringAngle,bodySlipAngle) {
     rearShare:0.6-0.085*lock,
   };
 }
+
+// With mandatory auto-throttle, grass traction used to be spent almost
+// entirely on forward torque. Limit only engine REQUEST, not physical lateral
+// capacity: 42% of each loaded grass tire's total friction circle stays
+// available for accelerating, leaving potential side-force authority.
+// Shoulder and road remain byte-for-byte identical to v0.4.6WG behavior.
+export const SURFACE_DRIVE_BUDGET = Object.freeze([1, 1, 1, 0.42]);
+export function surfaceDriveBudget(surfaceType) {
+  return SURFACE_DRIVE_BUDGET[surfaceType] ?? SURFACE_DRIVE_BUDGET[3];
+}

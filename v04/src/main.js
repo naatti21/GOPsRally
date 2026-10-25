@@ -190,7 +190,9 @@ async function start() {
     };
     view.drive(pose, dt);
     view.render();
-    $("#speed").textContent = Math.round(Math.abs(current.speed) * 3.6);
+    // HUD is driven-wheel indicated speed. Ground speed and body-forward
+    // speed remain separate read-only telemetry during slides and jumps.
+    $("#speed").textContent = Math.round(current.wheelSpeedMps * 3.6);
     const lap = laps.snapshot();
     $("#lap").textContent =
       `Lap ${lap.laps.length + 1} · ${lap.elapsed.toFixed(1)}s${lap.valid ? "" : " · invalid"}`;
@@ -205,7 +207,7 @@ async function start() {
       : "";
     $("#status").textContent = outsideWorld
       ? "OUTSIDE WORLD · PRESS RESET"
-      : `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7${slipLabel}`;
+      : `${current.wheels.filter((w) => w.contact).length}/4 contacts · CP ${Math.min(lap.next, 7)}/7${slipLabel}${current.wheelLimiter ? " · LIMITER" : ""}`;
     const mp = mapPoint(current.position);
     $("#map-car").setAttribute("cx", mp.x);
     $("#map-car").setAttribute("cy", mp.y);

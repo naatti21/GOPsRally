@@ -1,23 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { rearCorneringFriction } from '../../v04/src/physics/tire.js';
+import { rearCorneringStiffnessScale } from '../../v04/src/physics/tire.js';
 import { createVehicle } from '../../v04/src/physics/vehicle.js';
 import { runSlideTrial } from '../../scripts/physics-line-lab.mjs';
 
-test('rear friction cap only fades when speed and real steering/yaw demand justify it',()=>{
-  assert.equal(rearCorneringFriction(1.6,5,1,.6,.4),1.6);
-  assert.equal(rearCorneringFriction(1.6,25,0,0,0),1.6);
-  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)<1.45);
-  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)>1.1);
-  assert.ok(rearCorneringFriction(0.7,25,-.9,.4,-.15)<.7);
-  const initiating = rearCorneringFriction(1.6,25,-.8,.38,-.16);
-  const catching = rearCorneringFriction(1.6,25,-.8,-.38,-.16);
-  assert.ok(initiating < 1.45 && catching > 1.55,
-    'opposite wheel input must restore real rear tire force budget');
-  assert.equal(rearCorneringFriction(1.6,Number.NaN,.2,.4,.1),0);
+test('rear lateral response softens under cornering but full friction cap stays available',()=>{
+  assert.equal(rearCorneringStiffnessScale(5,1,.6,.4),1);
+  assert.equal(rearCorneringStiffnessScale(25,0,0,0),1);
+  const turning=rearCorneringStiffnessScale(25,-.9,.4,-.15);
+  const catching=rearCorneringStiffnessScale(25,-.9,-.4,-.15);
+  assert.ok(turning<.85 && turning>.6);
+  assert.ok(catching>turning && catching<=1);
+  assert.equal(rearCorneringStiffnessScale(Number.NaN,.2,.4,.1),1);
 });
-test('front keeps full cap; grounded rear consumes corner load as traction',async()=>{
+test('front and rear retain full friction cap; rear lateral aligning response is lower in a turn',async()=>{
   await RAPIER.init();
   const world=new RAPIER.World({x:0,y:-9.81,z:0});
   world.createCollider(RAPIER.ColliderDesc.cuboid(200,.1,500).setTranslation(0,-.1,0));
@@ -31,8 +28,9 @@ test('front keeps full cap; grounded rear consumes corner load as traction',asyn
     assert.ok(state.wheels.some(w=>w.contact));
     assert.ok(Math.abs(state.yawRate)>.1);
     assert.ok(state.wheels[0].frictionCap>1.59);
-    assert.ok(state.wheels[2].frictionCap<state.wheels[0].frictionCap);
-    assert.ok(state.wheels[2].frictionCap>=1.1);
+    assert.equal(state.wheels[2].frictionCap,state.wheels[0].frictionCap);
+    assert.ok(state.wheels[2].sideGrip<state.wheels[0].sideGrip);
+    assert.ok(state.wheels[2].sideGrip<0.78);
     assert.ok(Number.isFinite(state.bodySlipAngle));
   }finally{world.free();}
 });

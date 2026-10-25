@@ -68,7 +68,7 @@ export function contactForces({
   // leaving no room for steering. On selected terrain, cap the requested
   // engine share BEFORE combining with lateral force; never create grip.
   // Actual applied impulses still obey the same mu * normal-load circle.
-  if (brake <= 0) {
+  if (brake <= 0 && driveBudget < 1) {
     const driveCap = limit * clamp(driveBudget, 0, 1);
     fx = clamp(fx, -driveCap, driveCap);
   }

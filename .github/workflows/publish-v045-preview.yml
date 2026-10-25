@@ -72,6 +72,9 @@ jobs:
           test -f dist/v04/sw.js
           cp -a dist/v04 /tmp/gops-rally-v045-verified
           git fetch origin main
+          # The temporary v045 path/cache edits are only build inputs; discard them
+          # after the verified dist copy, before switching to production main.
+          git reset --hard HEAD
           git checkout -B isolated-v045-pages origin/main
           rm -rf -- v045
           mkdir -p v045

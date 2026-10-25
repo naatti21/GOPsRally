@@ -14,7 +14,6 @@ jobs:
           node-version: '24.19.0'
           cache: npm
       - run: npm ci
-      - run: npm test
       - name: Draw-line physics metrics (real Rapier, deterministic)
         run: |
           node scripts/physics-line-lab.mjs > draw-line-report.json
@@ -42,6 +41,7 @@ jobs:
           name: steer-only-drift-metrics
           path: drift-benchmark.json
           retention-days: 14
+      - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

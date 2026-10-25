@@ -4,7 +4,7 @@ import { driveIntent } from "../game/contracts.js";
 import { velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
 import { contactForces, CONTACT_TUNE } from "./contact-tire.js";
 import { SURFACE_GRIP } from "./tire.js";
-import { availableEngineForce, wheelDriveForce } from "./drive-profile.js";
+import { availableEngineForce, wheelDriveForce, cornerDriveManagement } from "./drive-profile.js";
 export const TUNE = Object.freeze({
   mass: 1200,
   centerOfMassY: -0.1,
@@ -149,8 +149,10 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     );
     steer = responsiveSteering(intent.steer, v, bodySideSlip);
     rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / TUNE.steeringTime));
+    const driveManagement = cornerDriveManagement(rackAngle, bodySideSlip);
     const engine = enabled
-      ? intent.throttle * availableEngineForce(v, reversing, TUNE.engineForce)
+      ? intent.throttle * availableEngineForce(v, reversing, TUNE.engineForce) *
+          driveManagement.throttleScale
       : 0;
     // Native raycasts/springs remain authoritative. Disable BOTH native tire axes:
     // no independent native engine/brake impulse can spend the same friction budget.
@@ -214,7 +216,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
         ),
         grip: SURFACE_GRIP[type] ?? SURFACE_GRIP[3],
         rear: i >= 2,
-        drive: wheelDriveForce(engine, i, TUNE.rearDriveShare),
+        drive: wheelDriveForce(engine, i, driveManagement.rearShare),
         brake: !enabled || intent.brake ? TUNE.brakeForce / 4 : 0,
         dt,
         mass: TUNE.mass,

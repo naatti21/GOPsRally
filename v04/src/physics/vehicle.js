@@ -18,7 +18,7 @@ export const TUNE = Object.freeze({
   brakeForce: 14000,
   drag: 0.42,
   rolling: 150,
-  steeringTime: 0.07,
+  steeringTime: 0.085,
 });
 export const WHEELS = [
   [-0.84, 0.05, -1.3],

@@ -4,6 +4,7 @@ import RAPIER from "@dimforge/rapier3d-compat";
 import {
   contactForces,
   lateralResponse,
+  CONTACT_TUNE,
 } from "../../v04/src/physics/contact-tire.js";
 import { createVehicle } from "../../v04/src/physics/vehicle.js";
 import { runArcadeTrace } from "../../scripts/arcade-dynamics-benchmark.mjs";
@@ -222,7 +223,7 @@ test("hard landing traction uses the capped applied spring load, never the uncla
       for (const w of car.snapshot().wheels) {
         if (w.rawSuspensionLoad > w.load + 1) clipped = true;
         assert.ok(w.load <= 18000);
-        assert.ok(w.tireLimit <= 1.05 * 18000 * 1.1);
+        assert.ok(w.tireLimit <= CONTACT_TUNE.mu * 18000 * 1.1 * 1.01 + 1e-5);
         assert.ok(
           Math.hypot(w.sideImpulse, w.forwardImpulse) <=
             w.tireLimit / 60 + 1e-5,

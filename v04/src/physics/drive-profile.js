@@ -16,3 +16,20 @@ export function wheelDriveForce(engineNewtons,wheelIndex,rearShare=0.6) {
     throw Error('Invalid drive distribution');
   return engineNewtons*(wheelIndex<2?(1-rearShare)/2:rearShare/2);
 }
+
+/**
+ * Automatic throttle can back off modestly under actual cornering load,
+ * like a simplified traction-control/torque-distribution system.
+ * This does not steer the car or insert yaw; all force is still limited by
+ * grounded tire load and shared longitudinal/lateral friction circle.
+ */
+export function cornerDriveManagement(steeringAngle,bodySlipAngle) {
+  if(!Number.isFinite(steeringAngle)||!Number.isFinite(bodySlipAngle))
+    return {throttleScale:1,rearShare:0.6};
+  const lock=clamp(Math.abs(steeringAngle)/0.38,0,1);
+  const slip=clamp((Math.abs(bodySlipAngle)-0.08)/0.2,0,1);
+  return {
+    throttleScale:1-0.20*lock*lock-0.12*slip,
+    rearShare:0.6-0.085*lock,
+  };
+}

@@ -1,6 +1,6 @@
-// Small, deterministic tire-response contract. Rapier owns the wheel raycast,
-// springs, drive and braking; this module supplies a bounded lateral grip curve.
-// The curve is deliberately arcade-tuned, not a Pacejka tire identification.
+// Historical v0.4.4 native-stiffness curve (tireGrip), retained for baseline
+// regression comparisons. v0.4.5 applies forces in contact-tire.js instead.
+// The slip, point-velocity and steering helpers below remain shared production code.
 export const SURFACE_GRIP = Object.freeze([1, 0.79, 0.64, 0.43]);
 export const AXLE_GRIP = Object.freeze({ front: 1.0, rear: 0.78 });
 

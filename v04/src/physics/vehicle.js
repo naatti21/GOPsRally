@@ -1,7 +1,9 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Vector3, Quaternion } from "three";
 import { driveIntent } from "../game/contracts.js";
-import { tireGrip, velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
+import { velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
+import { contactForces, CONTACT_TUNE } from "./contact-tire.js";
+import { SURFACE_GRIP } from "./tire.js";
 export const TUNE = Object.freeze({
   mass: 1200,
   centerOfMassY: -0.1,
@@ -16,6 +18,7 @@ export const TUNE = Object.freeze({
   brakeForce: 14000,
   drag: 0.42,
   rolling: 150,
+  steeringTime: 0.07,
 });
 export const WHEELS = [
   [-0.84, 0.05, -1.3],
@@ -77,8 +80,17 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
   });
   let brakeHeld = 0,
     steer = 0,
+    rackAngle = 0,
     reversing = false;
-  const tireState = WHEELS.map(() => ({ slipAngle: 0, sideGrip: 1, surface: 0 }));
+  const tireState = WHEELS.map(() => ({
+    slipAngle: 0,
+    sideGrip: 1,
+    surface: 0,
+    sideImpulse: 0,
+    forwardImpulse: 0,
+    limit: 0,
+    relaxedAngle: 0,
+  }));
   const direction = () =>
     new Vector3(0, 0, -1).applyQuaternion(body.rotation());
   function speed() {
@@ -96,8 +108,19 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     body.resetTorques(true);
     brakeHeld = 0;
     steer = 0;
+    rackAngle = 0;
     reversing = false;
-    tireState.forEach((state) => Object.assign(state, { slipAngle: 0, sideGrip: 1, surface: 0 }));
+    tireState.forEach((state) =>
+      Object.assign(state, {
+        slipAngle: 0,
+        sideGrip: 1,
+        surface: 0,
+        sideImpulse: 0,
+        forwardImpulse: 0,
+        limit: 0,
+        relaxedAngle: 0,
+      }),
+    );
   }
   function tick(dt, input = {}, enabled = true) {
     const v = speed();
@@ -115,48 +138,108 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     // chassis still rotates only under Rapier tire forces and collisions.
     const velocityBeforeSteer = body.linvel();
     const orientationBeforeSteer = body.rotation();
-    const rightBeforeSteer = new Vector3(1, 0, 0).applyQuaternion(orientationBeforeSteer);
+    const rightBeforeSteer = new Vector3(1, 0, 0).applyQuaternion(
+      orientationBeforeSteer,
+    );
     const bodySideSlip = measuredSlip(
       rightBeforeSteer.dot(velocityBeforeSteer),
       v,
     );
     steer = responsiveSteering(intent.steer, v, bodySideSlip);
+    rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / TUNE.steeringTime));
     const engine = enabled
       ? intent.throttle *
         TUNE.engineForce *
         Math.max(0, 1 - Math.abs(v) / (reversing ? 8 : 62))
       : 0;
-    // Measure each contact's *own* lateral slip (including yaw velocity), not
-    // merely the car heading. Native Rapier wheel impulses and suspension
-    // remain authoritative; per-wheel side stiffness fades beyond grip peak.
-    const q = body.rotation();
-    const center = new Vector3(body.translation().x, body.translation().y, body.translation().z);
-    const lin = body.linvel(), ang = body.angvel();
+    // Native raycasts/springs remain authoritative. Disable BOTH native tire axes:
+    // no independent native engine/brake impulse can spend the same friction budget.
     for (let i = 0; i < 4; i++) {
-      const contact = controller.wheelContactPoint(i);
-      const type = contact ? surfaceAt(contact.x, contact.z) : 0;
-      const wheelSteer = i < 2 ? steer : 0;
-      const anchor = new Vector3(...WHEELS[i]).applyQuaternion(q).add(center);
-      const offset = anchor.clone().sub(center);
-      const pointVelocity = velocityAtWheel(lin, ang, offset);
-      const right = new Vector3(Math.cos(wheelSteer), 0, Math.sin(wheelSteer)).applyQuaternion(q);
-      const forward = new Vector3(Math.sin(wheelSteer), 0, -Math.cos(wheelSteer)).applyQuaternion(q);
-      const lateral = pointVelocity.x * right.x + pointVelocity.y * right.y + pointVelocity.z * right.z;
-      const longitudinal = pointVelocity.x * forward.x + pointVelocity.y * forward.y + pointVelocity.z * forward.z;
-      const angle = measuredSlip(lateral, longitudinal);
-      const grip = tireGrip(angle, longitudinal, type, i >= 2);
-      Object.assign(tireState[i], { slipAngle: angle, sideGrip: grip, surface: type });
-      controller.setWheelSideFrictionStiffness(i, grip);
-      controller.setWheelFrictionSlip(i, [1.6, 1.25, 0.95, 0.7][type] ?? 0.7);
-      controller.setWheelSteering(i, i < 2 ? -steer : 0);
-      controller.setWheelEngineForce(i, engine / 4);
-      controller.setWheelBrake(
-        i,
-        !enabled || intent.brake ? (TUNE.brakeForce * dt) / 4 : 0,
-      );
+      controller.setWheelSideFrictionStiffness(i, 0);
+      controller.setWheelSteering(i, i < 2 ? -rackAngle : 0);
+      controller.setWheelEngineForce(i, 0);
+      controller.setWheelBrake(i, 0);
     }
-    // Rapier applies suspension and friction impulses at contacts, including torque/load transfer.
     controller.updateVehicle(dt, RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC);
+    const q = body.rotation(),
+      center = body.worldCom(),
+      lin = { ...body.linvel() },
+      ang = { ...body.angvel() };
+    const impulses = [];
+    for (let i = 0; i < 4; i++) {
+      const state = tireState[i];
+      if (!controller.wheelIsInContact(i)) {
+        Object.assign(state, {
+          slipAngle: 0,
+          sideImpulse: 0,
+          forwardImpulse: 0,
+          limit: 0,
+          relaxedAngle: 0,
+        });
+        continue;
+      }
+      const point = controller.wheelContactPoint(i),
+        normal = new Vector3().copy(controller.wheelContactNormal(i));
+      const type = surfaceAt(point.x, point.z),
+        wheelSteer = i < 2 ? rackAngle : 0;
+      const right = new Vector3(
+        Math.cos(wheelSteer),
+        0,
+        Math.sin(wheelSteer),
+      ).applyQuaternion(q);
+      right.addScaledVector(normal, -right.dot(normal)).normalize();
+      const forward = new Vector3().crossVectors(normal, right).normalize();
+      const velocity = velocityAtWheel(lin, ang, {
+        x: point.x - center.x,
+        y: point.y - center.y,
+        z: point.z - center.z,
+      });
+      const lateral = right.dot(velocity),
+        longitudinal = forward.dot(velocity),
+        angle = measuredSlip(lateral, longitudinal);
+      const response =
+        1 -
+        Math.exp(
+          (-dt * Math.max(5, Math.abs(longitudinal))) /
+            CONTACT_TUNE.relaxationLength,
+        );
+      state.relaxedAngle += (angle - state.relaxedAngle) * response;
+      const force = contactForces({
+        angle: state.relaxedAngle,
+        lateral,
+        longitudinal,
+        load: Math.min(
+          controller.wheelMaxSuspensionForce(i),
+          Math.max(0, controller.wheelSuspensionForce(i)),
+        ),
+        grip: SURFACE_GRIP[type] ?? SURFACE_GRIP[3],
+        rear: i >= 2,
+        drive: engine / 4,
+        brake: !enabled || intent.brake ? TUNE.brakeForce / 4 : 0,
+        dt,
+        mass: TUNE.mass,
+      });
+      Object.assign(state, {
+        slipAngle: angle,
+        sideGrip:
+          force.retention * (i >= 2 ? 0.98 : 1) * (SURFACE_GRIP[type] ?? 0.43),
+        surface: type,
+        sideImpulse: force.lateral * dt,
+        forwardImpulse: force.longitudinal * dt,
+        limit: force.limit,
+      });
+      // Keep the native cap visible for compatibility diagnostics, not as a second tire model.
+      controller.setWheelFrictionSlip(i, [1.6, 1.25, 0.95, 0.7][type] ?? 0.7);
+      impulses.push({
+        point,
+        impulse: right
+          .multiplyScalar(force.lateral * dt)
+          .addScaledVector(forward, force.longitudinal * dt),
+      });
+    }
+    // Evaluate all wheels from the same pre-tire state, avoiding left/right iteration-order bias.
+    for (const { point, impulse } of impulses)
+      body.applyImpulseAtPoint(impulse, point, true);
     const velocity = body.linvel(),
       magnitude = Math.hypot(velocity.x, velocity.y, velocity.z);
     if (magnitude > 0) {
@@ -190,16 +273,25 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       rotation: { ...orientation },
       speed: speed(),
       steer,
+      rackAngle,
       lateralSpeed: localLateral,
       bodySlipAngle: measuredSlip(localLateral, localLongitudinal),
       yawRate,
       wheels: WHEELS.map((_, i) => ({
         contact: controller.wheelIsInContact(i),
         length: controller.wheelSuspensionLength(i),
-        load: controller.wheelSuspensionForce(i),
+        load: Math.min(
+          controller.wheelMaxSuspensionForce(i),
+          Math.max(0, controller.wheelSuspensionForce(i)),
+        ),
+        rawSuspensionLoad: controller.wheelSuspensionForce(i),
         rotation: controller.wheelRotation(i),
         steer: controller.wheelSteering(i),
-        sideImpulse: controller.wheelSideImpulse(i),
+        sideImpulse: tireState[i].sideImpulse,
+        forwardImpulse: tireState[i].forwardImpulse,
+        tireLimit: tireState[i].limit,
+        nativeSideImpulse: controller.wheelSideImpulse(i),
+        nativeForwardImpulse: controller.wheelForwardImpulse(i),
         slipAngle: tireState[i].slipAngle,
         sideGrip: tireState[i].sideGrip,
         surface: tireState[i].surface,

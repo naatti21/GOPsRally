@@ -171,3 +171,17 @@ test("landscape controls, cancellation and configurable start/direction", async 
   await assertCarInFrame(page);
   await page.screenshot({ path: "test-results/drive-landscape.png" });
 });
+
+test('portrait Chase has restrained speed FOV and visible car through a steer/countersteer transition',async({page})=>{
+ await page.setViewportSize({width:393,height:800});await page.goto('./');await expect(page.locator('body')).toHaveAttribute('data-ready','true',{timeout:20000});
+ await page.getByRole('button',{name:'Chase',exact:true}).click();const slow=await page.evaluate(()=>rallyDrive.snapshot().metrics.cameraFov);expect(slow).toBeGreaterThanOrEqual(62);expect(slow).toBeLessThan(62.1);
+ await page.locator('#go').click();await expect.poll(()=>page.evaluate(()=>rallyDrive.snapshot().speed),{timeout:25000}).toBeGreaterThan(23);
+ const before=await page.evaluate(()=>rallyDrive.snapshot());expect(before.metrics.cameraFov).toBeGreaterThan(62.8);expect(before.metrics.cameraFov).toBeLessThan(68.01);await assertCarInFrame(page);
+ const frames=await page.evaluate(async()=>{
+  const samples=[];const key=(type,code)=>window.dispatchEvent(new KeyboardEvent(type,{code,bubbles:true}));
+  key('keydown','ArrowRight');const start=performance.now();let changed=false,released=false;
+  await new Promise(resolve=>{function frame(now){if(now-start>=650&&!changed){key('keyup','ArrowRight');key('keydown','ArrowLeft');changed=true}if(now-start>=750&&!released){key('keyup','ArrowLeft');released=true}const s=rallyDrive.snapshot();samples.push({time:now,car:s.metrics.carNdc,fov:s.metrics.cameraFov,finite:s.metrics.cameraFinite});if(now-start>1400)resolve();else requestAnimationFrame(frame)}requestAnimationFrame(frame)});key('keyup','ArrowLeft');key('keyup','ArrowRight');return samples;
+ });
+ for(let i=0;i<frames.length;i++){const f=frames[i];expect(f.finite).toBe(true);expect(Math.abs(f.car.x)).toBeLessThan(.72);expect(f.car.y).toBeGreaterThan(-.60);expect(f.car.y).toBeLessThan(.75);expect(f.fov).toBeGreaterThanOrEqual(62);expect(f.fov).toBeLessThanOrEqual(68);if(i&&f.time-frames[i-1].time<50)expect(Math.abs(f.fov-frames[i-1].fov)).toBeLessThan(.5)}
+ await page.screenshot({path:'test-results/arcade-chase-portrait.png'});await test.info().attach('camera-samples',{body:JSON.stringify({slow,before,frames}),contentType:'application/json'});
+});

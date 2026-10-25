@@ -33,6 +33,13 @@ jobs:
           name: racing-line-corner-results
           path: corner-benchmark.json
           retention-days: 14
+      - name: Steering-only drift and contact-force telemetry
+        run: npm run --silent lab:drift > arcade-drift-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arcade-drift-metrics
+          path: arcade-drift-report.json
+          retention-days: 14
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Real Chromium rendering and offline tests

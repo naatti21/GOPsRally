@@ -1,7 +1,7 @@
 /** Repeatable 60 Hz draw-line/Rapier test, not a new game mode. */
 import RAPIER from '@dimforge/rapier3d-compat';
 import { pathToFileURL } from 'node:url';
-import { createVehicle } from '../v04/src/physics/vehicle.js';
+const {createVehicle}=process.env.RALLY_VEHICLE_MODULE?await import(pathToFileURL(process.env.RALLY_VEHICLE_MODULE)):await import('../v04/src/physics/vehicle.js');
 import { compileSegments, drawDriver, PHYSICS_TEST_LINE } from '../v04/src/testing/line-lab.js';
 const dt=1/60;
 await RAPIER.init();

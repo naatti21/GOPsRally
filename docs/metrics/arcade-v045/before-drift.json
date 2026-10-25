@@ -1,0 +1,307 @@
+{
+  "name": "GOPs Rally steering-only breakaway sweep",
+  "throttle": "automatic",
+  "brakeInTurn": false,
+  "artificialSlipSeed": false,
+  "thresholdDegrees": 8,
+  "results": [
+    {
+      "speedKmh": 70.2,
+      "turnSeconds": 0.35,
+      "peakSteerOnlySlipDegrees": 1.6,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 14.3,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 1.8,
+          "maxDifferenceFromNoCounterMeters": -9.1,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -23.4,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 1.6,
+          "maxDifferenceFromNoCounterMeters": -5.5,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -19.8,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 1.6,
+          "maxDifferenceFromNoCounterMeters": -0.6,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -14.9,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 70.2,
+      "turnSeconds": 0.65,
+      "peakSteerOnlySlipDegrees": 1.7,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 27.2,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 1.8,
+          "maxDifferenceFromNoCounterMeters": 19.8,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -7.4,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 1.7,
+          "maxDifferenceFromNoCounterMeters": 23.5,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -3.7,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 1.7,
+          "maxDifferenceFromNoCounterMeters": 25.7,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 1.5,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 70.2,
+      "turnSeconds": 0.95,
+      "peakSteerOnlySlipDegrees": 1.8,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 37.2,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 1.9,
+          "maxDifferenceFromNoCounterMeters": 29.9,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 7.3,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 1.8,
+          "maxDifferenceFromNoCounterMeters": 26.2,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 11,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 1.8,
+          "maxDifferenceFromNoCounterMeters": 21,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 16.2,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 100.1,
+      "turnSeconds": 0.35,
+      "peakSteerOnlySlipDegrees": 0.6,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 14.8,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 0.7,
+          "maxDifferenceFromNoCounterMeters": -8.6,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -23.4,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 0.7,
+          "maxDifferenceFromNoCounterMeters": -5.1,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -19.9,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 0.6,
+          "maxDifferenceFromNoCounterMeters": -0.2,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -15,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 100.1,
+      "turnSeconds": 0.65,
+      "peakSteerOnlySlipDegrees": 0.7,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 27.5,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 0.8,
+          "maxDifferenceFromNoCounterMeters": 20.5,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -7,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 0.7,
+          "maxDifferenceFromNoCounterMeters": 24.1,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -3.4,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 0.7,
+          "maxDifferenceFromNoCounterMeters": 25.9,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 1.6,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 100.1,
+      "turnSeconds": 0.95,
+      "peakSteerOnlySlipDegrees": 0.7,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 38,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 0.8,
+          "maxDifferenceFromNoCounterMeters": 29.9,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 8.1,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 0.7,
+          "maxDifferenceFromNoCounterMeters": 26.3,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 11.7,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 0.7,
+          "maxDifferenceFromNoCounterMeters": 21.3,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 16.7,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 126,
+      "turnSeconds": 0.35,
+      "peakSteerOnlySlipDegrees": 0.3,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 15.1,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 0.4,
+          "maxDifferenceFromNoCounterMeters": -8.4,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -23.5,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 0.4,
+          "maxDifferenceFromNoCounterMeters": -5,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -20.1,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 0.3,
+          "maxDifferenceFromNoCounterMeters": -0.1,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -15.2,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 126,
+      "turnSeconds": 0.65,
+      "peakSteerOnlySlipDegrees": 0.3,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 27.8,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 0.4,
+          "maxDifferenceFromNoCounterMeters": 21,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -6.8,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 0.4,
+          "maxDifferenceFromNoCounterMeters": 24.5,
+          "finalSlipDegrees": 0,
+          "lateralMeters": -3.3,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 0.3,
+          "maxDifferenceFromNoCounterMeters": 26.1,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 1.7,
+          "slideWasInitiated": false
+        }
+      ]
+    },
+    {
+      "speedKmh": 126,
+      "turnSeconds": 0.95,
+      "peakSteerOnlySlipDegrees": 0.3,
+      "slideWasInitiated": false,
+      "noCounterLateralMeters": 38.6,
+      "corrections": [
+        {
+          "delaySeconds": 0.12,
+          "peakSlipDegrees": 0.4,
+          "maxDifferenceFromNoCounterMeters": 30.1,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 8.5,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.35,
+          "peakSlipDegrees": 0.4,
+          "maxDifferenceFromNoCounterMeters": 26.5,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 12.1,
+          "slideWasInitiated": false
+        },
+        {
+          "delaySeconds": 0.65,
+          "peakSlipDegrees": 0.4,
+          "maxDifferenceFromNoCounterMeters": 21.5,
+          "finalSlipDegrees": 0,
+          "lateralMeters": 17.1,
+          "slideWasInitiated": false
+        }
+      ]
+    }
+  ],
+  "note": "Each 3.5s trial includes a 0.35/0.65/0.95s right pulse and optional long countersteer. These are repeatable flat-ground impulse-budget fixtures, NOT a human judgement of feeling."
+}

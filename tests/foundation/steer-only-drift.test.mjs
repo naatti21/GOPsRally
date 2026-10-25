@@ -8,12 +8,12 @@ import { runSlideTrial } from '../../scripts/physics-line-lab.mjs';
 test('rear friction cap only fades when speed and real steering/yaw demand justify it',()=>{
   assert.equal(rearCorneringFriction(1.6,5,1,.6,.4),1.6);
   assert.equal(rearCorneringFriction(1.6,25,0,0,0),1.6);
-  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)<1.25);
-  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)>.6);
+  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)<1.45);
+  assert.ok(rearCorneringFriction(1.6,25,-.9,.4,-.15)>1.1);
   assert.ok(rearCorneringFriction(0.7,25,-.9,.4,-.15)<.7);
   const initiating = rearCorneringFriction(1.6,25,-.8,.38,-.16);
   const catching = rearCorneringFriction(1.6,25,-.8,-.38,-.16);
-  assert.ok(initiating < 1.2 && catching > 1.5,
+  assert.ok(initiating < 1.45 && catching > 1.55,
     'opposite wheel input must restore real rear tire force budget');
   assert.equal(rearCorneringFriction(1.6,Number.NaN,.2,.4,.1),0);
 });
@@ -32,7 +32,7 @@ test('front keeps full cap; grounded rear consumes corner load as traction',asyn
     assert.ok(Math.abs(state.yawRate)>.1);
     assert.ok(state.wheels[0].frictionCap>1.59);
     assert.ok(state.wheels[2].frictionCap<state.wheels[0].frictionCap);
-    assert.ok(state.wheels[2].frictionCap>=0.6);
+    assert.ok(state.wheels[2].frictionCap>=1.1);
     assert.ok(Number.isFinite(state.bodySlipAngle));
   }finally{world.free();}
 });

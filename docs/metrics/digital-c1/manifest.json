@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "candidateSourceCommit": "e4978c53338b58ef7a9eaefeb295b97c296db24c",
+  "node": "v24.22.1",
+  "dt": 0.016666666666666666,
+  "runCount": 1458,
+  "physicsSteps": 3365280,
+  "candidateRepeat": "243/243 summaries exactly equal; excluded trace hash because added observational fields changed bytes",
+  "files": {
+    "corners-and-acceleration.json": "a3d243eeff355da97cea762fb66d07bf7b2c49584d5fb9d10ab08f5914ff93df",
+    "results.csv": "a0fad4175708812ab88e952e98cbfe0ac6c42721750a5d4dd79d721b2546e51c",
+    "validation.txt": "066d447e6be9d9ebc84a1bfe7014bdc50b2930e6a5666e6ce0c5134bfdc91dd2",
+    "summary.json.gz": "595b1024e57cede6c3c0ffda2a78a0dd22e8b2f0c68489c2bbde2bea9c620158",
+    "matched-entry.json.gz": "7032dff79fb78b749d8ed5e9b61deaf01588dbeb3edcd81efb6b7e22fef474de"
+  }
+}

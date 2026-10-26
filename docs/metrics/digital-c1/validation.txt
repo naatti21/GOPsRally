@@ -1,0 +1,32 @@
+Digital C1 validation, 2026-10-26
+Application source: e4978c53338b58ef7a9eaefeb295b97c296db24c
+Status: NO-GO. Developer evidence, not independent QA.
+
+C1 npm test
+✖ steering-only moderate slide has duration, short correction reduces yaw and path error at three speeds (237.995899ms)
+✖ large steering pulses have an intermediate region; prolonged overcorrection still fails (520.794622ms)
+✖ Rapier front wheel steering reverses promptly during lateral drift without teleporting (225.393506ms)
+✖ moderate steer-only slide remains possible and speed camera separates 60/100 (41.513616ms)
+✖ small steer pulse on compact retains intermediate slip and settles without oscillation (298.273347ms)
+✖ acceleration transfers load rearward; right/left input yields correct physical yaw (101.203698ms)
+ℹ tests 67
+ℹ pass 61
+ℹ fail 6
+✖ failing tests:
+✖ steering-only moderate slide has duration, short correction reduces yaw and path error at three speeds (237.995899ms)
+✖ large steering pulses have an intermediate region; prolonged overcorrection still fails (520.794622ms)
+✖ Rapier front wheel steering reverses promptly during lateral drift without teleporting (225.393506ms)
+✖ moderate steer-only slide remains possible and speed camera separates 60/100 (41.513616ms)
+✖ small steer pulse on compact retains intermediate slip and settles without oscillation (298.273347ms)
+✖ acceleration transfers load rearward; right/left input yields correct physical yaw (101.203698ms)
+
+PR18 baseline npm test
+ℹ tests 63
+ℹ pass 63
+ℹ fail 0
+
+C1 legacy smoke separately: PASS
+C1 production build: PASS, existing large-chunk warning
+Browser: BLOCKED before gameplay, WebGL context creation failed in 6 tests.
+Pinned Chromium download failed; alternative Chromium 153 could launch but lacked usable WebGL2.
+Android hardware: NOT RUN. No frame-rate or touch-latency claim.

@@ -14,11 +14,14 @@ export const CATCH_TUNE=Object.freeze({
   minSpeedMps:12,
   minSlipRadians:0.075,   // 4.3 degrees
   minYawRadiansPerSecond:0.16, // 9.2 degrees/second
-  rackCapRadians:0.155,
+  rackCapRadians:0.22,
+  fullControlStartSeconds:0.42,
+  fullControlEndSeconds:0.72,
 });
-export const emptyCatchState=()=>({direction:0,latched:false});
-export function gateCountersteer(previous,{button,baseAngle,forward,lateral,yaw}) {
-  if(![button,baseAngle,forward,lateral,yaw].every(Number.isFinite))throw Error('Invalid steering signals');
+export const emptyCatchState=()=>({direction:0,latched:false,holdSeconds:0});
+export function gateCountersteer(previous,{button,baseAngle,forward,lateral,yaw,dt}) {
+  if(![button,baseAngle,forward,lateral,yaw,dt].every(Number.isFinite)||dt<=0||dt>0.1)
+    throw Error('Invalid steering signals');
   const direction=Math.sign(button);
   const changed=direction!==previous.direction;
   const groundSpeed=Math.hypot(forward,lateral);
@@ -34,8 +37,13 @@ export function gateCountersteer(previous,{button,baseAngle,forward,lateral,yaw}
     Math.abs(yaw)>=CATCH_TUNE.minYawRadiansPerSecond;
   const latched=direction===0?false:
     changed?(trulyOpposite&&qualifying):Boolean(previous.latched);
-  const limited=latched
-    ?Math.sign(baseAngle)*Math.min(Math.abs(baseAngle),CATCH_TUNE.rackCapRadians)
-    :baseAngle;
-  return {direction,latched,baseAngle,limited,slip:beta};
+  const holdSeconds=direction===0?0:(changed?dt:previous.holdSeconds+dt);
+  const release=(holdSeconds-CATCH_TUNE.fullControlStartSeconds)/
+    (CATCH_TUNE.fullControlEndSeconds-CATCH_TUNE.fullControlStartSeconds);
+  const weight=clamp(release,0,1);
+  const protectedAngle=Math.sign(baseAngle)*Math.min(Math.abs(baseAngle),CATCH_TUNE.rackCapRadians);
+  // Ordinary intentional longer steering is fully restored after 720ms;
+  // only the short digital catch window is constrained.
+  const limited=latched?(protectedAngle*(1-weight)+baseAngle*weight):baseAngle;
+  return {direction,latched,holdSeconds,baseAngle,limited,slip:beta};
 }

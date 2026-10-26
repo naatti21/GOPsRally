@@ -190,7 +190,7 @@ async function start() {
     };
     view.drive(pose, dt);
     view.render();
-    $("#speed").textContent = Math.round(Math.abs(current.speed) * 3.6);
+    $("#speed").textContent = Math.round(current.groundSpeedMps * 3.6);
     const lap = laps.snapshot();
     $("#lap").textContent =
       `Lap ${lap.laps.length + 1} · ${lap.elapsed.toFixed(1)}s${lap.valid ? "" : " · invalid"}`;
@@ -199,8 +199,8 @@ async function start() {
       : countdown > 0
         ? Math.ceil(countdown)
         : "";
-    const slipDegrees = Math.round(Math.abs(current.bodySlipAngle) * 180 / Math.PI);
-    const slipLabel = slipDegrees >= 5 && Math.abs(current.speed) > 8
+    const slipDegrees = Math.round(Math.abs(current.truePlanarSlipAngle) * 180 / Math.PI);
+    const slipLabel = slipDegrees >= 5 && current.groundSpeedMps > 8
       ? ` · SLIP ${slipDegrees}°`
       : "";
     $("#status").textContent = outsideWorld

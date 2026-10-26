@@ -1,0 +1,37 @@
+name: Opt-in Digital C1 research (not release acceptance)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: npm
+      - run: npm ci
+      - name: Locked baselines
+        run: HANDLING_VERSIONS=v044,v045,v045b,v046,v046wgt HANDLING_OUTPUT=lab-results/integrated-baselines node scripts/integrated-handling-lab.mjs
+      - name: Candidate and exact repeat
+        run: |
+          HANDLING_VERSIONS=candidate HANDLING_OUTPUT=lab-results/integrated node scripts/integrated-handling-lab.mjs
+          HANDLING_VERSIONS=candidate HANDLING_OUTPUT=lab-results/integrated-final node scripts/integrated-handling-lab.mjs
+      - run: node scripts/integrated-handling-extra.mjs
+      - run: node scripts/handling-matched-entry.mjs
+      - run: python scripts/summarize-integrated-handling.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: digital-c1-research-NO-GO
+          path: |
+            lab-results/
+            docs/metrics/digital-c1/
+          retention-days: 14
+      - name: Existing acceptance tests (known C1 failures must remain red)
+        run: npm test

@@ -2,6 +2,7 @@ import RAPIER from "@dimforge/rapier3d-compat";
 import { Vector3, Quaternion } from "three";
 import { driveIntent } from "../game/contracts.js";
 import { velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
+import {emptyCatchState,gateCountersteer} from "./countersteer-window.js";
 import { contactForces, CONTACT_TUNE } from "./contact-tire.js";
 import { SURFACE_GRIP } from "./tire.js";
 import { availableEngineForce, wheelDriveForce, cornerDriveManagement } from "./drive-profile.js";
@@ -84,6 +85,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     steer = 0,
     rackAngle = 0,
     reversing = false;
+  let catchState=emptyCatchState();
   const tireState = WHEELS.map(() => ({
     slipAngle: 0,
     sideGrip: 1,
@@ -112,6 +114,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     steer = 0;
     rackAngle = 0;
     reversing = false;
+    catchState=emptyCatchState();
     tireState.forEach((state) =>
       Object.assign(state, {
         slipAngle: 0,
@@ -147,7 +150,13 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       rightBeforeSteer.dot(velocityBeforeSteer),
       v,
     );
-    steer = responsiveSteering(intent.steer, v, bodySideSlip);
+    const nativeTarget=responsiveSteering(intent.steer,v,bodySideSlip);
+    const yawBefore=new Vector3(0,1,0).applyQuaternion(orientationBeforeSteer).dot(body.angvel());
+    catchState=gateCountersteer(catchState,{
+      button:intent.steer,baseAngle:nativeTarget,forward:v,
+      lateral:rightBeforeSteer.dot(velocityBeforeSteer),yaw:yawBefore,
+    });
+    steer=catchState.limited;
     rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / TUNE.steeringTime));
     const driveManagement = cornerDriveManagement(rackAngle, bodySideSlip);
     const engine = enabled
@@ -276,6 +285,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       speed: speed(),
       steer,
       rackAngle,
+      countersteerGuard:catchState.latched,
       lateralSpeed: localLateral,
       bodySlipAngle: measuredSlip(localLateral, localLongitudinal),
       yawRate,

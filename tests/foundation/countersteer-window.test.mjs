@@ -4,7 +4,7 @@ import {gateCountersteer,emptyCatchState,CATCH_TUNE} from '../../v04/src/physics
 import * as factory from '../../v04/src/physics/vehicle.js';
 import {simulate} from '../../scripts/long-run/simulate.mjs';
 const signals=(o={})=>({button:1,baseAngle:.35,forward:27.8,
-  lateral:0,yaw:-.4,...o});
+  lateral:0,yaw:-.4,dt:1/60,...o});
 test('ordinary racing line steering is byte-for-byte unchanged, including short steer-only initiation',()=>{
  for(const velocity of [0,8,20,35]){
    for(const b of [-1,0,1]){
@@ -25,6 +25,12 @@ test('only a physical opposite press after nontrivial same-signed yaw AND slip i
  const crossed=gateCountersteer(off,signals({button:-1,baseAngle:-.35,lateral:2,yaw:.35}));
  assert.equal(crossed.latched,true);
  assert.equal(crossed.limited,-CATCH_TUNE.rackCapRadians);
+ let extended=crossed;
+ for(let i=0;i<44;i++)extended=gateCountersteer(extended,signals({
+   button:-1,baseAngle:-.35,lateral:2,yaw:.35
+ }));
+ assert.ok(Math.abs(extended.limited+.35)<1e-9,
+   'a deliberately held long turn must recover full steering');
  const released=gateCountersteer(crossed,signals({button:0,baseAngle:0}));
  assert.equal(released.latched,false);
  const newTurn=gateCountersteer(released,signals({button:-1,baseAngle:-.35,lateral:2,yaw:.35}));

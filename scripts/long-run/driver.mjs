@@ -8,7 +8,7 @@ export function chicaneInput(t) {
   return {right:right?on:catching,left:right?catching:on,brake:phase>=9&&phase<9.7};
 }
 // Sampled, delayed digital driver. Reads snapshots only. No car/body reference.
-export function digitalDriver(road,{delay=.2,period=.2,maxSpeed=100/3.6,brakeMode='speed-plan'}={}) {
+export function digitalDriver(road,{delay=.2,period=.2,maxSpeed=100/3.6,brakeMode='speed-plan',lineOffset=0}={}) {
   let next=0,held={left:false,right:false,brake:false},history=[];
   return (t,state)=>{
     history.push({t,...state});
@@ -17,7 +17,7 @@ export function digitalDriver(road,{delay=.2,period=.2,maxSpeed=100/3.6,brakeMod
     next=t+period;
     const old=history[0],p=road.nearest(old.x,old.z),v=old.speed;
     const ahead=road.at(p.s+Math.min(40,10+v*.65));
-    const error=wrap(Math.atan2(ahead.x-old.x,-(ahead.z-old.z))-old.heading);
+    const error=wrap(Math.atan2(ahead.x-ahead.tz*lineOffset-old.x,-(ahead.z+ahead.tx*lineOffset-old.z))-old.heading);
     let target=maxSpeed;
     // Plan braking from geometric curvature; no desired yaw/position is applied.
     for(let d=0;d<=90;d+=10){

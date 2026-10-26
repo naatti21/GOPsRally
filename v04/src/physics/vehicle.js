@@ -1,10 +1,11 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Vector3, Quaternion } from "three";
 import { driveIntent } from "../game/contracts.js";
-import { velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
+import { velocityAtWheel, measuredSlip } from "./tire.js";
 import { contactForces, CONTACT_TUNE } from "./contact-tire.js";
 import { SURFACE_GRIP } from "./tire.js";
 import { availableEngineForce, wheelDriveForce, cornerDriveManagement } from "./drive-profile.js";
+import { digitalSteering } from "./digital-steering.js";
 export const TUNE = Object.freeze({
   mass: 1200,
   centerOfMassY: -0.1,
@@ -84,6 +85,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     steer = 0,
     rackAngle = 0,
     reversing = false;
+  let steeringState = {direction:0, hold:0, rack:0};
   const tireState = WHEELS.map(() => ({
     slipAngle: 0,
     sideGrip: 1,
@@ -111,6 +113,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     brakeHeld = 0;
     steer = 0;
     rackAngle = 0;
+    steeringState = {direction:0, hold:0, rack:0};
     reversing = false;
     tireState.forEach((state) =>
       Object.assign(state, {
@@ -147,8 +150,13 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       rightBeforeSteer.dot(velocityBeforeSteer),
       v,
     );
-    steer = responsiveSteering(intent.steer, v, bodySideSlip);
-    rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / TUNE.steeringTime));
+    steeringState = digitalSteering(steeringState, {
+      input:intent.steer, forward:v,
+      lateral:rightBeforeSteer.dot(velocityBeforeSteer),
+      yaw:new Vector3(0,1,0).applyQuaternion(orientationBeforeSteer).dot(body.angvel()), dt,
+    });
+    steer = steeringState.target;
+    rackAngle = steeringState.rack;
     const driveManagement = cornerDriveManagement(rackAngle, bodySideSlip);
     const engine = enabled
       ? intent.throttle * availableEngineForce(v, reversing, TUNE.engineForce) *
@@ -274,6 +282,11 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       position: { ...body.translation() },
       rotation: { ...orientation },
       speed: speed(),
+      groundSpeedMps: Math.hypot(velocity.x,velocity.z),
+      truePlanarSlipAngle: Math.hypot(velocity.x,velocity.z) > .5
+        ? Math.atan2(-velocity.x*forward.z+velocity.z*forward.x,
+            velocity.x*forward.x+velocity.z*forward.z) : 0,
+      steeringControl: {...steeringState},
       steer,
       rackAngle,
       lateralSpeed: localLateral,

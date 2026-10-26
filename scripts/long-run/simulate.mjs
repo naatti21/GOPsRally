@@ -14,12 +14,12 @@ export function simulate(factory,scenario,{traceFile}={}) {
   const env=environment(scenario.environment),world=new RAPIER.World({x:0,y:-9.81,z:0});world.timestep=DT;
   if(env.data)world.createCollider(RAPIER.ColliderDesc.trimesh(env.data.positions,env.data.indices));
   else world.createCollider(RAPIER.ColliderDesc.cuboid(20000,.1,20000).setTranslation(0,-.1,0));
-  const car=factory.createVehicle(world,{surfaceAt:env.surfaceAt}),rows=[];
+  const car=factory.createVehicle(world,{surfaceAt:scenario.surfaceType===undefined?env.surfaceAt:()=>scenario.surfaceType}),rows=[];
   const start=scenario.mode==='driver'?env.road.at(env.track.length-4):{x:0,y:0,z:0,tx:0,tz:-1};
   const yaw=Math.atan2(-start.tx,-start.tz);
   car.reset({x:start.x,y:(env.sample(start.x,start.z)?.height??0)+1,z:start.z},yaw);
   const laps=makeLaps(env.track);
-  const driver=digitalDriver(env.road,{delay:scenario.delay??.2,period:scenario.period??.2,maxSpeed:scenario.speed/3.6,brakeMode:scenario.brakeMode});
+  const driver=digitalDriver(env.road,{delay:scenario.delay??.2,period:scenario.period??.2,maxSpeed:scenario.speed/3.6,brakeMode:scenario.brakeMode,lineOffset:scenario.lineOffset??0});
   try {
     for(let i=0;i<120;i++){car.tick(DT,{},false);world.step();}
     car.body.setLinvel({x:start.tx*scenario.speed/3.6,y:0,z:start.tz*scenario.speed/3.6},true);
@@ -48,7 +48,7 @@ export function simulate(factory,scenario,{traceFile}={}) {
       rows.push({t:(i+1)*DT,left:!!input.left,right:!!input.right,brake:!!input.brake,decision:!!input.decision,reason:input.reason??null,
         phase:input.brake?'brake':input.left?'left':input.right?'right':'release',
         x:s.position.x,y:s.position.y,z:s.position.z,rotation:s.rotation,velocity:{...v},speed,forwardSpeed:s.speed,lateralSpeed:s.lateralSpeed,
-        heading:heading*DEG,course:course*DEG,beta,yaw:s.yawRate*DEG,ay,rack:s.rackAngle??s.steer,
+        heading:heading*DEG,course:course*DEG,beta,yaw:s.yawRate*DEG,ay,rack:s.rackAngle??s.steer,steeringControl:s.steeringControl??null,
         pitch:Math.asin(Math.max(-1,Math.min(1,f.y)))*DEG,roll:Math.asin(Math.max(-1,Math.min(1,right.y)))*DEG,
         margin:Math.min(...wheels.map(w=>w.margin)),station:env.road.nearest(s.position.x,s.position.z).s,inDomain:!!env.sample(s.position.x,s.position.z),wheels});
     }

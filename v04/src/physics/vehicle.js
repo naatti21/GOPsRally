@@ -154,7 +154,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     const yawBefore=new Vector3(0,1,0).applyQuaternion(orientationBeforeSteer).dot(body.angvel());
     catchState=gateCountersteer(catchState,{
       button:intent.steer,baseAngle:nativeTarget,forward:v,
-      lateral:rightBeforeSteer.dot(velocityBeforeSteer),yaw:yawBefore,
+      lateral:rightBeforeSteer.dot(velocityBeforeSteer),yaw:yawBefore,dt,
     });
     steer=catchState.limited;
     rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / TUNE.steeringTime));

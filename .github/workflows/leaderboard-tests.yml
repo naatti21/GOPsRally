@@ -1,0 +1,21 @@
+name: GOPs Rally leaderboard tests
+on:
+  pull_request:
+    paths:
+      - 'server/leaderboard/**'
+      - '.github/workflows/leaderboard-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sqlite-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run D1 SQL contract tests in Node SQLite
+        run: npm test
+        working-directory: server/leaderboard

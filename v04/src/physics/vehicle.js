@@ -21,7 +21,8 @@ export const TUNE = Object.freeze({
   brakeForce: 14000,
   drag: 0.42,
   rolling: 150,
-  steeringTime: 0.07,
+  steeringTime: 0.065,
+  turnInSteeringTime: 0.095,
 });
 export const WHEELS = [
   [-0.84, 0.05, -1.3],
@@ -162,7 +163,7 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       Math.sign(steer) === Math.sign(rackAngle) &&
       Math.abs(steer) > Math.abs(rackAngle) &&
       Math.abs(bodySideSlip) < 0.15 && Math.abs(v) > 8;
-    const rackTau = buildingSameTurn ? 0.095 : 0.065;
+    const rackTau = buildingSameTurn ? TUNE.turnInSteeringTime : TUNE.steeringTime;
     rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / rackTau));
     const driveManagement = cornerDriveManagement(rackAngle, bodySideSlip);
     const groundSpeed = Math.hypot(velocityBeforeSteer.x, velocityBeforeSteer.z);

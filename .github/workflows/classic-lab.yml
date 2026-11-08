@@ -25,3 +25,12 @@ jobs:
         run: node tests/3d-smoke-test.cjs
       - name: Classic turn/slip/recovery regression
         run: node tests/classic-feel.cjs
+      - name: Bundle isolated single-file Android test
+        run: node scripts/classic-single-file.cjs
+      - name: Archive test file (never deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: classic-rally-android-single-file
+          path: dist/classic-rally-test.html
+          if-no-files-found: error
+          retention-days: 7

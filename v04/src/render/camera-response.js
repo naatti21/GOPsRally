@@ -1,8 +1,8 @@
 // Radians for headings, m/s for speed. No track tangent or synthetic speed.
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 export function chaseFov(speed) {
-  // Make ordinary 60–100 km/h speeds visually distinguishable, not only 180+.
-  const t = Math.min(1, Math.max(0, (Math.abs(speed) - 5) / 38));
+  // Begin perceivable FOV/parallax earlier during launch, without faking speed.
+  const t = Math.min(1, Math.max(0, (Math.abs(speed) - 2) / 34));
   return 62 + 12 * t * t * (3 - 2 * t);
 }
 export function easeFov(current, target, dt, snap = false) {

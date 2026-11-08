@@ -25,7 +25,12 @@ test("held Android-style steering touch remains a control, not a text selection"
   await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",
     touchPoints:[{x:btn.x+btn.width/2,y:btn.y+btn.height/2,id:1}]});
   await expect.poll(()=>page.evaluate(()=>rallyDrive.snapshot().input.left)).toBe(true);
-  await page.waitForTimeout(1100);
+  // Long physical holds exceed the original 1.1 s smoke check. Keep the
+  // pointer captured while the finger moves slightly within the button.
+  await page.waitForTimeout(1500);
+  await cdp.send("Input.dispatchTouchEvent",{type:"touchMove",
+    touchPoints:[{x:btn.x+btn.width/2+7,y:btn.y+btn.height/2-6,id:1}]});
+  await page.waitForTimeout(1600);
   expect(await page.evaluate(()=>rallyDrive.snapshot().input.left)).toBe(true);
   expect(await page.evaluate(()=>window.getSelection()?.toString()??"")).toBe("");
   await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});

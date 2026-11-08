@@ -1,0 +1,27 @@
+name: Classic sandbox regressions — NO DEPLOY
+on:
+  pull_request:
+    paths:
+      - 'game.js'
+      - 'renderer3d.js'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/classic-lab.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Baseline game smoke test
+        run: node tests/smoke-test.cjs
+      - name: Native WebGL2 smoke test
+        run: node tests/3d-smoke-test.cjs
+      - name: Classic turn/slip/recovery regression
+        run: node tests/classic-feel.cjs

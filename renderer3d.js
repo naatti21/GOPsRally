@@ -126,6 +126,24 @@ function buildWorld(track,trees,ground,roadHalf){
  }
  }
  world.push(gpu(treeMesh));
+ // Closely spaced roadside posts are stable, visible parallax cues. They are
+ // drawn from actual track geometry, with no fake speedometer adjustment.
+ const cues=meshBuilder();let nextCue=16;
+ for(let i=1;i<track.length;i++){
+  const p=track[i],prev=track[i-1];
+  nextCue+=Math.hypot(p.x-prev.x,p.z-prev.z);
+  if(nextCue<15)continue;
+  nextCue=0;
+  for(const side of [-1,1]){
+   const lateral=side*(roadHalf+3.3);
+   const x=p.x+Math.cos(p.theta)*lateral;
+   const z=p.z-Math.sin(p.theta)*lateral;
+   const y=p.y+p.bank*lateral;
+   cues.box(x,y+.75,z,.36,1.5,.36,[.82,.79,.66]);
+   cues.box(x,y+1.40,z,.48,.29,.48,side<0?[.89,.24,.13]:[.94,.88,.62]);
+  }
+ }
+ if(cues.data.length)world.push(gpu(cues));
  const flag=meshBuilder();const at=track[627 % track.length],theta=at.theta,fx=Math.sin(theta),fz=Math.cos(theta),rx=Math.cos(theta),rz=-Math.sin(theta);const w=roadHalf*2;
  for(let k=0;k<10;k++)for(let q=0;q<2;q++){
  const x1=-roadHalf+k*w/10,x2=-roadHalf+(k+1)*w/10,z1=q*1.6,z2=(q+1)*1.6;
@@ -161,7 +179,11 @@ function render(state,track,trees,ground,roadHalf){
  if(canvas.width!==dw||canvas.height!==dh){canvas.width=dw;canvas.height=dh;}
  gl.viewport(0,0,dw,dh);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE); // Keep both faces visible on steep, banked track sections.
  gl.clearColor(.17,.28,.21,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- const speed=clamp(state.speed/55,0,1),span=178+speed*55,aspect=W/H;
+ const speed=clamp(state.speed/55,0,1),aspect=W/H;
+ // Classic FIXED offers a zoomed-out, compass-locked isometric stage view.
+ // Portrait remains viable, while landscape provides a longer readable road.
+ const fixed=state.camera==='fixed';
+ const span=fixed?(aspect>1?112+speed*36:154+speed*54):178+speed*55;
  const projection=ortho(-span*aspect*.5,span*aspect*.5,-span*.5,span*.5,5,850);
  // This orbit's lookAt basis points camera-right toward world -X.
  // Mirror X so screen-right agrees with car-right in the established 2D physics.
@@ -169,7 +191,9 @@ function render(state,track,trees,ground,roadHalf){
  const baseY=roadSurface(state.camX,state.camZ,track,ground,roadHalf),target=[state.camX,baseY,state.camZ];
  const dir=state.camera==='chase'?state.camYaw:0,ss=Math.sin(dir),cc=Math.cos(dir);
  // Elevated orbit with fixed heading or chase heading, respecting relief without camera roll.
- const eye=[target[0]-ss*128,target[1]+163,target[2]-cc*128];
+ const eye=fixed
+  ? [target[0],target[1]+187,target[2]-99]
+  : [target[0]-ss*128,target[1]+163,target[2]-cc*128];
  const view=lookAt(eye,target);
  gl.useProgram(program);gl.uniformMatrix4fv(loc.projection,false,projection);gl.uniformMatrix4fv(loc.view,false,view);
  const I=identity();for(const m of world)draw(m,I);

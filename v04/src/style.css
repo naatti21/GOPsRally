@@ -198,6 +198,19 @@ footer button {
   right: 10px;
   bottom: max(8px, env(safe-area-inset-bottom));
 }
+/* Android long press/double tap must never start text selection or callouts
+   during a held steering/brake contact. Keep course settings selectable. */
+.driving footer,
+.driving footer *,
+.driving footer .row,
+.driving footer button {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .driving footer button {
   width: 33%;
   height: 82px;

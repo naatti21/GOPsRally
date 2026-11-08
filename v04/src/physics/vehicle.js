@@ -4,7 +4,7 @@ import { driveIntent } from "../game/contracts.js";
 import { velocityAtWheel, measuredSlip, responsiveSteering } from "./tire.js";
 import { contactForces, CONTACT_TUNE } from "./contact-tire.js";
 import { SURFACE_GRIP } from "./tire.js";
-import { availableEngineForce, wheelDriveForce, cornerDriveManagement, surfaceDriveBudget } from "./drive-profile.js";
+import { availableEngineForce, wheelDriveForce, cornerDriveManagement, surfaceDriveBudget, launchTorqueScale } from "./drive-profile.js";
 import { stepWheelSpin, wheelSpeedometer } from "./wheel-spin.js";
 export const TUNE = Object.freeze({
   mass: 1200,
@@ -21,7 +21,8 @@ export const TUNE = Object.freeze({
   brakeForce: 14000,
   drag: 0.42,
   rolling: 150,
-  steeringTime: 0.07,
+  steeringTime: 0.065,
+  turnInSteeringTime: 0.095,
 });
 export const WHEELS = [
   [-0.84, 0.05, -1.3],
@@ -155,11 +156,22 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
       v,
     );
     steer = responsiveSteering(intent.steer, v, bodySideSlip);
-    rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / TUNE.steeringTime));
+    // Entering a slide gets a gentler steering rise; releasing or reversing
+    // input stays quick, preserving the short countersteer recovery window.
+    // This changes only physical wheel angle, never applies corrective yaw.
+    const buildingSameTurn = steer !== 0 && rackAngle !== 0 &&
+      Math.sign(steer) === Math.sign(rackAngle) &&
+      Math.abs(steer) > Math.abs(rackAngle) &&
+      Math.abs(bodySideSlip) < 0.15 && Math.abs(v) > 8;
+    const rackTau = buildingSameTurn ? TUNE.turnInSteeringTime : TUNE.steeringTime;
+    rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / rackTau));
     const driveManagement = cornerDriveManagement(rackAngle, bodySideSlip);
+    const groundSpeed = Math.hypot(velocityBeforeSteer.x, velocityBeforeSteer.z);
+    const launchScale = !reversing && Math.abs(bodySideSlip) < 0.06 &&
+      Math.abs(rackAngle) < 0.06 ? launchTorqueScale(groundSpeed) : 1;
     const engine = enabled
       ? intent.throttle * availableEngineForce(v, reversing, TUNE.engineForce) *
-          driveManagement.throttleScale
+          launchScale * driveManagement.throttleScale
       : 0;
     // Native raycasts/springs remain authoritative. Disable BOTH native tire axes:
     // no independent native engine/brake impulse can spend the same friction budget.

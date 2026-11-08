@@ -6,8 +6,9 @@ import { chaseFov } from "../../v04/src/render/camera-response.js";
 
 test("extra launch force decays smoothly before middle speeds without faking wheel or body speed",()=>{
   assert.ok(Math.abs(launchTorqueScale(0)-1.12)<1e-9);
-  assert.ok(launchTorqueScale(5)>launchTorqueScale(10));
-  assert.ok(launchTorqueScale(10)>1);
+  assert.ok(launchTorqueScale(5)>launchTorqueScale(8));
+  assert.ok(launchTorqueScale(8)>1);
+  assert.equal(launchTorqueScale(10),1);
   assert.equal(launchTorqueScale(15),1);
   assert.equal(launchTorqueScale(30),1);
   assert.equal(launchTorqueScale(Number.NaN),1);

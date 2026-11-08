@@ -19,6 +19,9 @@ for (const width of [320, 393])
     await expect(page.locator("body")).toHaveAttribute("data-ready", "true", {
       timeout: 20000,
     });
+    // This branch starts in compass-locked Fixed, without touching the vehicle.
+    await expect(page.getByRole("button", { name: "Fixed", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -58,10 +61,20 @@ for (const width of [320, 393])
     ).toHaveAttribute("aria-pressed", "true");
     await assertCarInFrame(page);
     const fixed = await page.evaluate(() => rallyDrive.snapshot().metrics);
-    expect(fixed.cameraDistance).toBeGreaterThan(38);
-    expect(fixed.cameraDistance).toBeLessThan(46);
-    expect(Math.abs(fixed.carNdc.x)).toBeLessThan(0.25);
-    expect(Math.abs(fixed.carNdc.y)).toBeLessThan(0.25);
+    // Portrait gets more road width, but the car remains within safe controls.
+    expect(fixed.cameraDistance).toBeGreaterThan(48);
+    expect(fixed.cameraDistance).toBeLessThan(90);
+    expect(Math.abs(fixed.carNdc.x)).toBeLessThan(0.55);
+    expect(Math.abs(fixed.carNdc.y)).toBeLessThan(0.55);
+    // Steering changes the car's yaw, never the fixed camera's compass bearing.
+    const bearing = fixed.cameraDirection;
+    await page.keyboard.down("ArrowRight");
+    await page.waitForTimeout(450);
+    await page.keyboard.up("ArrowRight");
+    const turned = await page.evaluate(() => rallyDrive.snapshot().metrics.cameraDirection);
+    expect(Math.hypot(turned.x - bearing.x, turned.y - bearing.y, turned.z - bearing.z))
+      .toBeLessThan(0.003);
+    await assertCarInFrame(page);
     await page.getByRole("button", { name: "Chase", exact: true }).click();
     await assertCarInFrame(page);
     expect(

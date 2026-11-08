@@ -117,8 +117,8 @@ async function start() {
       view.setCamera(b.dataset.camera);
     };
   configure();
-  // Until the alternate Fixed angle is validated on-device, start with the known-playable chase view.
-  view.setCamera("chase");
+  // This isolated camera experiment launches Fixed by default; physics is unchanged.
+  view.setCamera("fixed");
   document.addEventListener("visibilitychange", () => {
     lastTime = performance.now();
     clock.reset();
@@ -218,6 +218,7 @@ async function start() {
         cameraFinite: view.camera.matrixWorld.elements.every(Number.isFinite),
         carNdc: view.carNdc(),
         cameraDistance: view.cameraDistance(),
+        cameraDirection: view.cameraDirection(),
       },
       trackLength: surface.track.length,
     }),

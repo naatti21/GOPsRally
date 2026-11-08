@@ -174,17 +174,25 @@
     state.closest=near.idx;
     if(road && near.dist<ROAD_HALF*.7)state.safeIdx=near.idx;
     const rightTurn=(input.right?1:0)-(input.left?1:0);
-    state.steer=lerp(state.steer,rightTurn,1-Math.exp(-dt*18));
+    // Classic: immediate digital rack response; avoid delayed steering build-up.
+    state.steer=lerp(state.steer,rightTurn,1-Math.exp(-dt*23));
     let vx=state.vx,vz=state.vz;
     let speed=length(vx,vz);
-    const desiredYawRate=state.steer*(.67+1.17*clamp(speed/52,0,1));
+    // Arcade steering without simulated tire-joint lag. No spin while stationary.
+    const desiredYawRate=state.steer*(.85+.54*clamp(speed/32,0,1))*clamp(speed/5,0,1);
     state.theta=turnAngle(state.theta+desiredYawRate*dt*(road?1:.78));
     const fX=Math.sin(state.theta),fZ=Math.cos(state.theta);
     const rX=Math.cos(state.theta),rZ=-Math.sin(state.theta);
     const forward=vx*fX+vz*fZ,lateral=vx*rX+vz*rZ;
     const yawMatchesCurve=Math.sign(state.steer)===Math.sign(near.at.curve);
     const banking=road&&yawMatchesCurve?Math.abs(near.at.bank)*5.5:0;
-    const grip=(road?5.3+banking:2.25);
+    // Earlier versions rapidly erased lateral speed, producing the rail-like feel.
+    // Speed and turn demand now gently loosen lateral damping; releasing the
+    // wheel restores grip naturally, so a countersteer can arrest the drift.
+    const speedLoad=clamp((speed-8)/34,0,1);
+    const grip=road
+      ? 4.1-1.45*speedLoad-.35*Math.abs(state.steer)*speedLoad+banking*.3
+      : 2.15;
     const remainingSide=lateral*Math.exp(-grip*dt);
     vx+=(remainingSide-lateral)*rX;vz+=(remainingSide-lateral)*rZ;
     speed=length(vx,vz);
@@ -232,7 +240,8 @@
     if(cm==='fixed')state.camYaw=lerp(state.camYaw,0,1-Math.exp(-dt*2.6));
     else state.camYaw+=turnAngle(desiredYaw-state.camYaw)*(1-Math.exp(-dt*3.3));
     // The car is offset toward the bottom of the view as speed rises.
-    const lead=11+clamp(state.speed/54,0,1)*28;
+    // World-locked camera sees the approaching road without hiding the car.
+    const lead=9+clamp(state.speed/45,0,1)*16;
     const targetX=state.x+Math.sin(state.theta)*lead,targetZ=state.z+Math.cos(state.theta)*lead;
     const camK=1-Math.exp(-dt*5.5);
     state.camX=lerp(state.camX,targetX,camK);state.camZ=lerp(state.camZ,targetZ,camK);
@@ -240,7 +249,7 @@
     // Skid traces mark actual slip, sampled independently of the render frame rate.
     state.skidClock+=dt;
     const slip=Math.abs(vx*Math.cos(state.theta)-vz*Math.sin(state.theta));
-    if(road&&state.speed>15&&slip>3&&state.skidClock>.045){
+    if(road&&state.speed>13&&slip>2.15&&state.skidClock>.045){
       state.skidClock=0;
       const fx=Math.sin(state.theta),fz=Math.cos(state.theta),rx=Math.cos(state.theta),rz=-Math.sin(state.theta);
       for(const side of [-1,1]){
@@ -251,7 +260,7 @@
       }
     }
     state.skids=state.skids.filter(p=>state.t-p.t<16).slice(-500);
-    if(road&&state.speed>18&&Math.abs(state.steer)>.12&&frameCount%2===0){
+    if(road&&state.speed>16&&Math.abs(state.steer)>.12&&frameCount%2===0){
       const side=seeded(frameCount*4)*2-1;
       state.dust.push({x:state.x-Math.sin(state.theta)*4+side*2,z:state.z-Math.cos(state.theta)*4,y:after.at.y,life:.8,r:1.4+seeded(frameCount*17)*1.6});
     }
@@ -261,7 +270,9 @@
   function camera(){
     // Scale is deliberately generous: fast driving must still show braking distance.
     const v=clamp(state.speed/56,0,1);
-    const worldHeight=154+v*54;
+    // Classic landscape: more road visible, without the tiny 0.3.1 car view.
+    // Portrait retains wider coverage for a later alternate camera mode.
+    const worldHeight=w>h ? 112+v*36 : 154+v*54;
     const scale=Math.min(h/worldHeight,w/(worldHeight*(w/h<.82?.54:.64)));
     return {scale,cx:w*.5,cy:h*.51,yaw:state.camYaw,ct:Math.cos(.52),st:Math.sin(.52),sin:Math.sin(state.camYaw),cos:Math.cos(state.camYaw)};
   }
@@ -438,7 +449,7 @@
     }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Driving error — check the console.';}
     requestAnimationFrame(tick);
   }
-  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,countdown:state.countdown,goFlash:state.goFlash,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,trees:trees.length,canvas:[canvas.width,canvas.height]}), reset:resetCar};
+  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,countdown:state.countdown,goFlash:state.goFlash,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,trees:trees.length,canvas:[canvas.width,canvas.height],lateralSpeed:state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),slipDegrees:Math.atan2(state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),state.vx*Math.sin(state.theta)+state.vz*Math.cos(state.theta))*180/Math.PI}), reset:resetCar};
   if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline cache unavailable',e)));
   requestAnimationFrame(tick);
 })();

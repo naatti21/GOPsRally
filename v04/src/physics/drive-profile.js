@@ -10,6 +10,16 @@ export function availableEngineForce(speedMps, reversing=false,peakNewtons=9000)
   const t=clamp(speed/60,0,1);
   return peakNewtons*(1-Math.pow(t,1.35));
 }
+/** Short, bounded launch torque plateau: extra push from rest, faded
+ * continuously by ~55 km/h. Still spends the exact physical tire force
+ * budget. Braking, reverse and maximum speed are unaffected. */
+export function launchTorqueScale(speedMps) {
+  if (!Number.isFinite(speedMps)) return 1;
+  const t=clamp(Math.abs(speedMps)/15,0,1);
+  const ease=t*t*(3-2*t);
+  return 1+0.12*(1-ease);
+}
+
 export function wheelDriveForce(engineNewtons,wheelIndex,rearShare=0.6) {
   if(!Number.isFinite(engineNewtons)||!Number.isFinite(rearShare)||
      rearShare<0||rearShare>1||!Number.isInteger(wheelIndex)||wheelIndex<0||wheelIndex>3)

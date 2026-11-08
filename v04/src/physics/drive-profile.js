@@ -15,7 +15,7 @@ export function availableEngineForce(speedMps, reversing=false,peakNewtons=9000)
  * budget. Braking, reverse and maximum speed are unaffected. */
 export function launchTorqueScale(speedMps) {
   if (!Number.isFinite(speedMps)) return 1;
-  const t=clamp(Math.abs(speedMps)/15,0,1);
+  const t=clamp(Math.abs(speedMps)/10,0,1);
   const ease=t*t*(3-2*t);
   return 1+0.12*(1-ease);
 }

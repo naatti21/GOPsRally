@@ -14,6 +14,11 @@ export function bindDrivingControls() {
     pointers.clear();
   };
   for (const b of document.querySelectorAll("[data-drive]")) {
+    // Long holds must remain steering gestures, never Android text selection,
+    // a context menu or a drag. Scope suppression to driving controls only.
+    for (const event of ["contextmenu", "selectstart", "dragstart", "dblclick"])
+      b.addEventListener(event, (e) => e.preventDefault());
+    b.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
     b.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       b.setPointerCapture(e.pointerId);

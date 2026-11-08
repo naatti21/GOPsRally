@@ -165,9 +165,12 @@ export function createVehicle(world, { surfaceAt = () => 0 } = {}) {
     const rackTau = buildingSameTurn ? 0.095 : 0.065;
     rackAngle += (steer - rackAngle) * (1 - Math.exp(-dt / rackTau));
     const driveManagement = cornerDriveManagement(rackAngle, bodySideSlip);
+    const groundSpeed = Math.hypot(velocityBeforeSteer.x, velocityBeforeSteer.z);
+    const launchScale = !reversing && Math.abs(bodySideSlip) < 0.06 &&
+      Math.abs(rackAngle) < 0.06 ? launchTorqueScale(groundSpeed) : 1;
     const engine = enabled
       ? intent.throttle * availableEngineForce(v, reversing, TUNE.engineForce) *
-          (reversing ? 1 : launchTorqueScale(v)) * driveManagement.throttleScale
+          launchScale * driveManagement.throttleScale
       : 0;
     // Native raycasts/springs remain authoritative. Disable BOTH native tire axes:
     // no independent native engine/brake impulse can spend the same friction budget.

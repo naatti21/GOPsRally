@@ -90,6 +90,9 @@ export function createScene(canvas, surface) {
   let mode = "fixed",
     anchor = null,
     lastDrivenPose = null;
+  // Fixed camera tracks an eased world-space focus without orbiting with the car.
+  const fixedFocus = new THREE.Vector3();
+  let fixedFocusReady = false;
   const sites = [0, 0.18, 0.31, 0.51, 0.7, 0.61].map(
     (t) => surface.track.nodes[Math.floor(t * surface.track.nodes.length)],
   );
@@ -189,32 +192,53 @@ export function createScene(canvas, surface) {
     forward.y = 0;
     forward.normalize();
     const speed = Math.abs(pose.speed);
-    // Fixed = a zoomed-out, stable compass-facing camera that TRACKS the car.
-    // Do not project the look-at point 7 m ahead of the car: in portrait mode
-    // that moves the vehicle behind the HUD/steering controls or off-screen.
-    // Chase remains the lower, heading-relative driving camera.
-    const fixed = mode === "fixed";
-    const lookAhead = fixed ? 0 : Math.min(14, 5 + speed * 0.22);
-    const target = chassis.position
-      .clone()
-      .addScaledVector(forward, lookAhead)
-      .add(new THREE.Vector3(0, 1.1, 0));
-    const wanted = fixed
-      ? chassis.position.clone().add(new THREE.Vector3(0, 32, 26))
-      : chassis.position
-          .clone()
-          .addScaledVector(forward, -(10 + Math.min(6, speed * 0.12)))
-          .add(new THREE.Vector3(0, 5.5 + Math.min(3, speed * 0.08), 0));
-    camera.position.lerp(
-      wanted,
-      snapCamera ? 1 : 1 - Math.exp(-Math.max(0, dt) * 7),
-    );
-    const newFov = fixed ? 58 : 62;
-    if (camera.fov !== newFov) {
-      camera.fov = newFov;
-      camera.updateProjectionMatrix();
+    if (mode === "fixed") {
+      // Experiment: a true compass-locked overhead camera. Both eye and look-at
+      // follow the SAME focus, so steering cannot rotate the screen.
+      // Use limited heading-based lead to show the next bend, with no road magnet.
+      const lead = Math.min(6.5, 1.5 + speed * 0.16);
+      const goal = chassis.position
+        .clone()
+        .addScaledVector(forward, lead)
+        .add(new THREE.Vector3(0, 1.1, 0));
+      const follow = snapCamera || !fixedFocusReady
+        ? 1
+        : 1 - Math.exp(-Math.max(0, dt) * 9);
+      fixedFocus.lerp(goal, follow);
+      fixedFocusReady = true;
+
+      // Portrait needs enough horizontal ground coverage to see both road edges.
+      // Higher speeds get a gentle pullback, never a chase-style camera rotation.
+      const narrow = Math.max(0, Math.min(1, (0.9 - camera.aspect) / 0.5));
+      const zoom = (1 + narrow * 0.27) * (1 + Math.min(0.16, speed * 0.004));
+      camera.position.copy(fixedFocus).add(
+        new THREE.Vector3(0, 45 * zoom, 23 * zoom),
+      );
+      if (camera.fov !== 56) {
+        camera.fov = 56;
+        camera.updateProjectionMatrix();
+      }
+      camera.lookAt(fixedFocus);
+    } else {
+      // Preserve the prior Chase behavior unchanged for an A/B comparison.
+      const target = chassis.position
+        .clone()
+        .addScaledVector(forward, Math.min(14, 5 + speed * 0.22))
+        .add(new THREE.Vector3(0, 1.1, 0));
+      const wanted = chassis.position
+        .clone()
+        .addScaledVector(forward, -(10 + Math.min(6, speed * 0.12)))
+        .add(new THREE.Vector3(0, 5.5 + Math.min(3, speed * 0.08), 0));
+      camera.position.lerp(
+        wanted,
+        snapCamera ? 1 : 1 - Math.exp(-Math.max(0, dt) * 7),
+      );
+      if (camera.fov !== 62) {
+        camera.fov = 62;
+        camera.updateProjectionMatrix();
+      }
+      camera.lookAt(target);
     }
-    camera.lookAt(target);
   }
   return {
     renderer,
@@ -241,6 +265,10 @@ export function createScene(canvas, surface) {
     },
     cameraDistance() {
       return camera.position.distanceTo(chassis.position);
+    },
+    cameraDirection() {
+      const d = camera.getWorldDirection(new THREE.Vector3());
+      return { x: d.x, y: d.y, z: d.z };
     },
     render() {
       renderer.render(scene, camera);

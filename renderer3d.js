@@ -187,8 +187,10 @@ function render(state,track,trees,ground,roadHalf){
  // Classic FIXED offers a zoomed-out, compass-locked isometric stage view.
  // Portrait remains viable, while landscape provides a longer readable road.
  const fixed=state.camera==='fixed';
- // Larger world span means a wider view; v1 accidentally zoomed IN in landscape.
- const span=fixed?(aspect>1?170+speed*30:190+speed*35):178+speed*55;
+ // Match the 2D fallback's physical screen scale. At 180 km/h (~50 m/s),
+ // 393 px / 136 m * 50 m/s ≈ 144 px/s of world-space optical flow.
+ // No fake speed: more scenery passes the camera because the car really moves.
+ const span=fixed?(aspect>1?174-speed*38:190-speed*25):178+speed*55;
  const projection=ortho(-span*aspect*.5,span*aspect*.5,-span*.5,span*.5,5,850);
  // This orbit's lookAt basis points camera-right toward world -X.
  // Mirror X so screen-right agrees with car-right in the established 2D physics.

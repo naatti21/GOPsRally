@@ -126,24 +126,28 @@ function buildWorld(track,trees,ground,roadHalf){
  }
  }
  world.push(gpu(treeMesh));
- // Closely spaced roadside posts are stable, visible parallax cues. They are
- // drawn from actual track geometry, with no fake speedometer adjustment.
- const cues=meshBuilder();let nextCue=16;
- for(let i=1;i<track.length;i++){
-  const p=track[i],prev=track[i-1];
-  nextCue+=Math.hypot(p.x-prev.x,p.z-prev.z);
-  if(nextCue<15)continue;
-  nextCue=0;
-  for(const side of [-1,1]){
-   const lateral=side*(roadHalf+3.3);
-   const x=p.x+Math.cos(p.theta)*lateral;
-   const z=p.z-Math.sin(p.theta)*lateral;
-   const y=p.y+p.bank*lateral;
-   cues.box(x,y+.75,z,.36,1.5,.36,[.82,.79,.66]);
-   cues.box(x,y+1.40,z,.48,.29,.48,side<0?[.89,.24,.13]:[.94,.88,.62]);
+ // Non-repeating grounded gravel flecks and darker worn patches provide
+ // persistent optical flow. These are world-space surfaces, not moving overlays
+ // or visual speed tricks. Unlike isolated posts they pass under the tires.
+ const gravel=meshBuilder();
+ const patchColor=[[.45,.38,.29],[.50,.43,.33],[.56,.47,.36],[.62,.53,.40]];
+ const random=n=>{const v=Math.sin(n*127.1+18.17)*43758.5453;return v-Math.floor(v);};
+ for(let i=0;i<track.length;i+=3){
+  const p=track[i],tx=Math.sin(p.theta),tz=Math.cos(p.theta),rx=Math.cos(p.theta),rz=-Math.sin(p.theta);
+  for(let j=0;j<4;j++){
+   const seed=i*17+j*131,across=(random(seed)*2-1)*(roadHalf-2.7);
+   const forward=(random(seed+1)-.5)*3;
+   const len=.55+random(seed+2)*1.7,wide=.25+random(seed+3)*.65;
+   const x=p.x+rx*across+tx*forward,z=p.z+rz*across+tz*forward;
+   const y=p.y+p.bank*across+.095;
+   const a=[x-rx*wide-tx*len,y,z-rz*wide-tz*len];
+   const b=[x+rx*wide-tx*len,y,z+rz*wide-tz*len];
+   const c=[x+rx*wide+tx*len,y,z+rz*wide+tz*len];
+   const d=[x-rx*wide+tx*len,y,z-rz*wide+tz*len];
+   gravel.quad(a,b,c,d,patchColor[Math.floor(random(seed+4)*patchColor.length)]);
   }
  }
- if(cues.data.length)world.push(gpu(cues));
+ if(gravel.data.length)world.push(gpu(gravel));
  const flag=meshBuilder();const at=track[627 % track.length],theta=at.theta,fx=Math.sin(theta),fz=Math.cos(theta),rx=Math.cos(theta),rz=-Math.sin(theta);const w=roadHalf*2;
  for(let k=0;k<10;k++)for(let q=0;q<2;q++){
  const x1=-roadHalf+k*w/10,x2=-roadHalf+(k+1)*w/10,z1=q*1.6,z2=(q+1)*1.6;
@@ -183,7 +187,8 @@ function render(state,track,trees,ground,roadHalf){
  // Classic FIXED offers a zoomed-out, compass-locked isometric stage view.
  // Portrait remains viable, while landscape provides a longer readable road.
  const fixed=state.camera==='fixed';
- const span=fixed?(aspect>1?112+speed*36:154+speed*54):178+speed*55;
+ // Larger world span means a wider view; v1 accidentally zoomed IN in landscape.
+ const span=fixed?(aspect>1?170+speed*30:190+speed*35):178+speed*55;
  const projection=ortho(-span*aspect*.5,span*aspect*.5,-span*.5,span*.5,5,850);
  // This orbit's lookAt basis points camera-right toward world -X.
  // Mirror X so screen-right agrees with car-right in the established 2D physics.

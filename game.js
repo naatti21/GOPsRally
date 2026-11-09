@@ -84,7 +84,7 @@
   const savedBest=()=>{try{const s=localStorage.getItem('gopsrally-best-v1');return s?Number(s):null;}catch{return null;}};
   const state={
     running:false,paused:false,t:0,lap:1,lapT:0,best:savedBest(),camera:'fixed',countdown:0,goFlash:0,
-    x:track[START_IDX].x,z:track[START_IDX].z,theta:track[START_IDX].theta,vx:0,vz:0,steer:0,
+    x:track[START_IDX].x,z:track[START_IDX].z,theta:track[START_IDX].theta,vx:0,vz:0,steer:0,yawRate:0,
     speed:0,camX:track[START_IDX].x,camZ:track[START_IDX].z,camY:track[START_IDX].y,camYaw:0,
     closest:START_IDX,safeIdx:START_IDX,offroad:false,progress:START_IDX/track.length,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0,lapGuard:0
   };
@@ -92,7 +92,7 @@
   const input={left:false,right:false,brake:false};
 
   function resetCar(){
-    const p=track[START_IDX];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,steer:0,speed:0,
+    const p=track[START_IDX];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,steer:0,yawRate:0,speed:0,
       camX:p.x,camZ:p.z,camY:p.y,camYaw:0,lap:1,lapT:0,lapGuard:0,countdown:0,goFlash:0,closest:START_IDX,safeIdx:START_IDX,offroad:false,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0});
   }
   // Manual recovery preserves the current lap and its elapsed time.
@@ -101,7 +101,7 @@
     if(!state.running || state.paused)return;
     const idx=state.safeIdx;
     const p=track[idx];
-    Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,speed:0,steer:0,
+    Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,speed:0,steer:0,yawRate:0,
       camX:p.x,camZ:p.z,camY:p.y,camYaw:state.camera==='fixed'?0:p.theta,
       closest:idx,offroad:false,dust:[],skidClock:0,roll:0,pitch:0,heave:0});
     Object.keys(input).forEach(k=>input[k]=false);
@@ -178,21 +178,27 @@
     state.steer=lerp(state.steer,rightTurn,1-Math.exp(-dt*23));
     let vx=state.vx,vz=state.vz;
     let speed=length(vx,vz);
-    // Arcade steering without simulated tire-joint lag. No spin while stationary.
-    const desiredYawRate=state.steer*(.85+.54*clamp(speed/32,0,1))*clamp(speed/5,0,1);
-    state.theta=turnAngle(state.theta+desiredYawRate*dt*(road?1:.78));
+    // The chassis has rotational inertia even when digital steering is released.
+    // A fast opposite input arrests the current yaw earlier than passive easing.
+    // This is arcade yaw dynamics, not an auto-rotation or track-centering assist.
+    const targetYaw=state.steer*(.85+.54*clamp(speed/32,0,1))*clamp(speed/3,0,1)*(road?1:.78);
+    const countersteering=state.yawRate*state.steer<-.06;
+    const yawResponse=speed<9 ? 22 : Math.abs(state.steer)<.05 ? 3.4 : countersteering ? 13 : 10;
+    state.yawRate=lerp(state.yawRate,targetYaw,1-Math.exp(-dt*yawResponse));
+    state.yawRate=clamp(state.yawRate,-1.5,1.5);
+    state.theta=turnAngle(state.theta+state.yawRate*dt);
     const fX=Math.sin(state.theta),fZ=Math.cos(state.theta);
     const rX=Math.cos(state.theta),rZ=-Math.sin(state.theta);
     const forward=vx*fX+vz*fZ,lateral=vx*rX+vz*rZ;
     const yawMatchesCurve=Math.sign(state.steer)===Math.sign(near.at.curve);
     const banking=road&&yawMatchesCurve?Math.abs(near.at.bank)*5.5:0;
-    // Earlier versions rapidly erased lateral speed, producing the rail-like feel.
-    // Speed and turn demand now gently loosen lateral damping; releasing the
-    // wheel restores grip naturally, so a countersteer can arrest the drift.
-    const speedLoad=clamp((speed-8)/34,0,1);
+    // Steering at rally speed can exceed lateral tyre grip: velocity continues
+    // while the body rotates. Neutral input restores grip; opposite steering
+    // reverses the yaw momentum instead of teleporting the velocity vector.
+    const speedLoad=clamp((speed-6)/15,0,1);
     const grip=road
-      ? 4.1-1.45*speedLoad-.35*Math.abs(state.steer)*speedLoad+banking*.3
-      : 2.15;
+      ? 5.0-4.25*speedLoad*Math.abs(state.steer)+banking*.25
+      : 2.1;
     const remainingSide=lateral*Math.exp(-grip*dt);
     vx+=(remainingSide-lateral)*rX;vz+=(remainingSide-lateral)*rZ;
     speed=length(vx,vz);
@@ -270,9 +276,8 @@
   function camera(){
     // Scale is deliberately generous: fast driving must still show braking distance.
     const v=clamp(state.speed/56,0,1);
-    // Classic landscape: more road visible, without the tiny 0.3.1 car view.
-    // Portrait retains wider coverage for a later alternate camera mode.
-    const worldHeight=w>h ? 112+v*36 : 154+v*54;
+    // Correct v1's inverted "zoom out": larger span genuinely shows more road.
+    const worldHeight=w>h ? 170+v*30 : 190+v*35;
     const scale=Math.min(h/worldHeight,w/(worldHeight*(w/h<.82?.54:.64)));
     return {scale,cx:w*.5,cy:h*.51,yaw:state.camYaw,ct:Math.cos(.52),st:Math.sin(.52),sin:Math.sin(state.camYaw),cos:Math.cos(state.camYaw)};
   }
@@ -437,7 +442,13 @@
     UI.speed.textContent=String(Math.round(state.speed*3.6));
     UI.best.textContent=state.best?formatTime(state.best):'—';
     UI.surface.textContent=state.offroad?'OFF ROAD':'GRAVEL';UI.surface.classList.toggle('offroad',state.offroad);
-    UI.message.textContent=state.offroad?'Find the road or use RESET.':state.speed>43?'Look further ahead. The racing line matters.':'Learn the road. Then find your pace.';
+    const forwardSpeed=state.vx*Math.sin(state.theta)+state.vz*Math.cos(state.theta);
+    const lateralSpeed=state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta);
+    const driftDeg=Math.abs(Math.atan2(lateralSpeed,forwardSpeed)*180/Math.PI);
+    // Test HUD: distinguish actual velocity slip from a mere wheel/heading animation.
+    UI.message.textContent=state.offroad?'OFF ROAD · RESET to recover':
+      state.speed>12?'SLIP '+Math.round(driftDeg)+'° · '+(driftDeg>10?'DRIFT / COUNTERSTEER':'GRIP')+' · TEST V2':
+      'CLASSIC DRIFT V2 · STEER / COUNTERSTEER';
   }
   function tick(now){
     try{
@@ -449,7 +460,7 @@
     }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Driving error — check the console.';}
     requestAnimationFrame(tick);
   }
-  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,countdown:state.countdown,goFlash:state.goFlash,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,trees:trees.length,canvas:[canvas.width,canvas.height],lateralSpeed:state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),slipDegrees:Math.atan2(state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),state.vx*Math.sin(state.theta)+state.vz*Math.cos(state.theta))*180/Math.PI}), reset:resetCar};
+  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,countdown:state.countdown,goFlash:state.goFlash,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,yawRate:state.yawRate,trees:trees.length,canvas:[canvas.width,canvas.height],lateralSpeed:state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),slipDegrees:Math.atan2(state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),state.vx*Math.sin(state.theta)+state.vz*Math.cos(state.theta))*180/Math.PI}), reset:resetCar};
   if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline cache unavailable',e)));
   requestAnimationFrame(tick);
 })();

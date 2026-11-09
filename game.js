@@ -241,9 +241,13 @@
     const after=closestRoad(state.x,state.z);
     // Visual body motion: short-travel, damped arcade suspension. Not full rigid-body dynamics.
     const bodyEase=1-Math.exp(-dt*9);
-    state.roll=lerp(state.roll,-state.steer*clamp(state.speed/34,0,1)*.17,bodyEase);
+    // Body lean follows APPLIED lateral acceleration, not the steering button.
+    // At high speed the same turn input can exceed grip and produce less actual
+    // side force, which is exactly what the chassis motion should communicate.
+    state.roll=lerp(state.roll,clamp(-state.sideAccel*.018,-.24,.24),bodyEase);
     state.pitch=lerp(state.pitch,(input.brake?-.14:.045)*clamp(state.speed/18,0,1),bodyEase);
-    state.heave=Math.sin(state.t*11)*clamp(state.speed/48,0,1)*.075;
+    // Road-surface vibration frequency follows true distance/time travelled.
+    state.heave=Math.sin(state.t*(10+state.speed*.25))*clamp(state.speed/45,0,1)*.11;
     state.progress=after.idx/track.length;
     const finish=track[FINISH_IDX],fnX=Math.sin(finish.theta),fnZ=Math.cos(finish.theta);
     const pre=(oldX-finish.x)*fnX+(oldZ-finish.z)*fnZ;

@@ -183,7 +183,7 @@
     // This is arcade yaw dynamics, not an auto-rotation or track-centering assist.
     const targetYaw=state.steer*(.85+.54*clamp(speed/32,0,1))*clamp(speed/3,0,1)*(road?1:.78);
     const countersteering=state.yawRate*state.steer<-.06;
-    const yawResponse=speed<9 ? 22 : Math.abs(state.steer)<.05 ? 3.4 : countersteering ? 13 : 7;
+    const yawResponse=speed<9 ? 22 : Math.abs(state.steer)<.05 ? 3.4 : countersteering ? 13 : 10;
     state.yawRate=lerp(state.yawRate,targetYaw,1-Math.exp(-dt*yawResponse));
     state.yawRate=clamp(state.yawRate,-1.5,1.5);
     state.theta=turnAngle(state.theta+state.yawRate*dt);
@@ -195,9 +195,9 @@
     // Steering at rally speed can exceed lateral tyre grip: velocity continues
     // while the body rotates. Neutral input restores grip; opposite steering
     // reverses the yaw momentum instead of teleporting the velocity vector.
-    const speedLoad=clamp((speed-10)/16,0,1);
+    const speedLoad=clamp((speed-6)/15,0,1);
     const grip=road
-      ? 5.0-3.6*speedLoad*Math.abs(state.steer)+banking*.25
+      ? 5.0-4.25*speedLoad*Math.abs(state.steer)+banking*.25
       : 2.1;
     const remainingSide=lateral*Math.exp(-grip*dt);
     vx+=(remainingSide-lateral)*rX;vz+=(remainingSide-lateral)*rZ;

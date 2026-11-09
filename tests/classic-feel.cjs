@@ -28,7 +28,7 @@ const starting=snapshot();
 steer('right',true);steps(29);steer('right',false);
 const drifting=snapshot();
 assert(Math.abs(drifting.heading-starting.heading)>.08,'turn-in must respond promptly');
-assert(Math.abs(drifting.slipDegrees)>8,'need meaningful entry slip, not tiny numbers passing as drift');
+assert(Math.abs(drifting.slipDegrees)>17,'at 80 km/h the turn must show substantial lateral slip, not a token 3-degree number');
 assert(Math.abs(drifting.lateralSpeed)>1.5,'lateral velocity must survive steering');
 assert(Math.abs(drifting.yawRate)>.5,'must build measurable rotational inertia');
 assert(drifting.skids>=2,'tyre trace must appear from actual lateral movement');

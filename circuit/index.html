@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-circuit>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#101b19">
+  <meta name="description" content="GOPs Rally – a three-lap 3D gravel rally time trial.">
+  <title>GOPs Rally · Gravel Ridge</title>
+  <link rel="stylesheet" href="../roadlab/hud.css">
+
+
+</head>
+<body>
+  <canvas id="scene3d" aria-label="3D rally world"></canvas>
+  <p id="webgl-error" role="alert" hidden>Gravel Ridge requires WebGL2.</p>
+  <div class="vignette" aria-hidden="true"></div>
+  <header class="hud">
+    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>GRAVEL RIDGE</small></span></div>
+    <div class="times">
+      <div><span class="eyebrow">LAP</span><strong id="lap">1/3</strong></div>
+      <div><span class="eyebrow">TIME</span><strong id="time">00:00.00</strong></div>
+      <div><span class="eyebrow">BEST</span><strong id="best">—</strong></div>
+    </div>
+  </header>
+  <section class="status-card" aria-live="polite"><span id="surface" class="surface-pill">GRAVEL</span><span id="message">Learn the road. Then find your pace.</span></section>
+  <output id="telemetry" hidden aria-label="Technical driving telemetry"></output>
+  <aside class="minimap" aria-label="Entire track map: yellow car arrow and finish line">
+    <div class="map-caption">GRAVEL RIDGE <span>N ↑</span></div>
+    <svg id="track-map" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <path id="map-road-outline" fill="none" stroke="#040e0b" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="map-road" fill="none" stroke="#d8d4b8" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+      <g id="map-finish"><rect x="-14" y="-3.5" width="28" height="7" fill="#f4c44d" stroke="#0b201a" stroke-width="2"/></g>
+      <g id="map-car"><path d="M0 -34 L-24 22 L0 11 L24 22 Z" fill="#f6ad43" stroke="#fff6db" stroke-width="5" stroke-linejoin="round"/></g>
+    </svg>
+    <span class="map-note">FULL LAP</span>
+  </aside>
+
+  <div class="speed"><strong id="speed">0</strong><div><span>KM/H</span></div></div>
+
+  <div id="controls" class="controls" aria-label="Driving controls">
+    <button id="left" class="drive-btn steer" aria-label="Steer left" type="button"><span>↶</span><small>LEFT</small></button>
+    <button id="brake" class="drive-btn brake" aria-label="Brake and reverse" type="button"><span>▮▮</span><small>BRAKE</small></button>
+    <button id="right" class="drive-btn steer" aria-label="Steer right" type="button"><span>↷</span><small>RIGHT</small></button>
+  </div>
+  <button id="pause" class="pause-button" type="button" aria-label="Pause race">PAUSE</button>
+  <button id="recover" class="recover-button" type="button" aria-label="Return car to road with a three-second penalty" title="Return to road · +3 s">↺ <small>RECOVER</small></button>
+  <div id="overlay" class="overlay race-screen">
+    <div class="panel">
+      <span class="kicker">GOPS RALLY · TIME TRIAL</span>
+      <div class="panel-rule"></div>
+      <h1 id="panel-title">Gravel <em>Ridge</em></h1>
+      <p id="panel-copy">Three laps · 2.09 km per lap. Brake before the bends and beat your best lap.</p>
+      <dl id="results" hidden></dl>
+      <div id="instruction" class="instruction"><span>↶ &nbsp; ↷</span> STEER <i></i><span>▮▮</span> BRAKE</div>
+      <button id="start" class="start-button" type="button">START RACE <span>→</span></button>
+      <button id="restart" class="secondary-button" type="button" hidden>Restart race</button>
+      <small id="control-hint">Phone: touch controls · Computer: ← → / A D, Space to brake. Hold brake at a stop to reverse.</small>
+    </div>
+  </div>
+  <div id="countdown" class="countdown" role="status" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status"></div>
+<script type="module" src="../roadlab/preview.mjs"></script>
+</body></html>

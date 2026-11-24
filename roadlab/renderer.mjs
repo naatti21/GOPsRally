@@ -47,13 +47,24 @@ function meshBuilder(){const data=[];
  return {data,tri,quad,box};}
 function gpu(builder,dynamic=false){const vao=gl.createVertexArray(),buf=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(builder.data),dynamic?gl.DYNAMIC_DRAW:gl.STATIC_DRAW);
  const stride=9*4;for(const [idx,offset] of [[loc.pos,0],[loc.normal,12],[loc.color,24]]){gl.enableVertexAttribArray(idx);gl.vertexAttribPointer(idx,3,gl.FLOAT,false,stride,offset);}gl.bindVertexArray(null);return {vao,buf,count:builder.data.length/9};}
-const terrain=meshBuilder(), floor=meshBuilder();
+const floor=meshBuilder(), batches=new Map();
+const batchLength=140;
 for(const tri of surface.triangles){
- const {a,b,c,nx,ny,nz,color}=tri;
- const target=tri.row ? terrain : floor;
- for(const v of [a,b,c]) target.data.push(v.x,v.y,v.z,nx,ny,nz,...color);
+ const {a,b,c,nx,ny,nz,color,row}=tri;
+ let target=floor;
+ if(row){
+  const key=Math.floor(row.s/batchLength);
+  if(!batches.has(key))batches.set(key,{data:[],minX:Infinity,maxX:-Infinity,minZ:Infinity,maxZ:-Infinity});
+  target=batches.get(key);
+  target.minX=Math.min(target.minX,a.x,b.x,c.x);
+  target.maxX=Math.max(target.maxX,a.x,b.x,c.x);
+  target.minZ=Math.min(target.minZ,a.z,b.z,c.z);
+  target.maxZ=Math.max(target.maxZ,a.z,b.z,c.z);
+ }
+ for(const v of [a,b,c])target.data.push(v.x,v.y,v.z,nx,ny,nz,...color);
 }
-const world=gpu(terrain), floorGpu=gpu(floor);
+const world=Array.from(batches.values(),({data,...bounds})=>({...gpu({data}),...bounds}));
+const floorGpu=gpu(floor);
 const colors={car:[.96,.29,.12],hood:[.98,.54,.12],roof:[.98,.91,.70],glass:[.10,.22,.28],stripe:[.94,.91,.71]};
 const car=meshBuilder();
 car.box(0,-.10,0,3.45,.73,5.80,colors.car);
@@ -79,10 +90,10 @@ shadow.quad([-2,0,-3.3],[2,0,-3.3],[2,0,3.3],[-2,0,3.3],[.11,.13,.10]);
 const shadowGpu=gpu(shadow);
 const I=identity();
 const shadowHit={};
-const stats={terrainTriangles:surface.triangles.length,drawCalls:8,
- vertices:world.count+floorGpu.count+carGpu.count+4*tyreGpu.count+shadowGpu.count};
+const stats={terrainTriangles:surface.triangles.length,batches:world.length,drawCalls:0,vertices:0};
 
 function draw(mesh,matrix){
+ stats.drawCalls++;stats.vertices+=mesh.count;
  gl.uniformMatrix4fv(loc.model,false,matrix);
  gl.bindVertexArray(mesh.vao);
  gl.drawArrays(gl.TRIANGLES,0,mesh.count);
@@ -94,6 +105,7 @@ function render(state,body,camera) {
  if(canvas.width!==dw||canvas.height!==dh){
   canvas.width=dw;canvas.height=dh;gl.viewport(0,0,dw,dh);
  }
+ stats.drawCalls=0;stats.vertices=0;
  gl.clearColor(.17,.28,.21,1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  const aspect=w/h;
@@ -109,7 +121,14 @@ function render(state,body,camera) {
  gl.depthMask(false);
  draw(floorGpu,I);
  gl.depthMask(true);
- draw(world,I);
+ const limitX=span*aspect/2+1;
+ // Conservative world-space culling for this fixed compass camera.
+ const limitZ=span*.66+20;
+ for(const part of world) {
+  if(part.minX>camera.x+limitX || part.maxX<camera.x-limitX ||
+     part.minZ>camera.z+limitZ || part.maxZ<camera.z-limitZ)continue;
+  draw(part,I);
+ }
  const hgt=surface.sample(state.x,state.z,shadowHit);
  if(hgt) {
   const sloped=rotationToSurface(hgt.nx,hgt.ny,hgt.nz,state.theta);

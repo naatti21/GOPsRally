@@ -1,0 +1,29 @@
+name: Gravel Ridge — playable circuit checks (no deploy)
+on:
+  pull_request:
+    branches:
+      - feat/roadlab-authoritative-surface
+    paths:
+      - 'circuit/**'
+      - 'roadlab/**'
+      - 'tests/**'
+      - '.github/workflows/circuit-checks.yml'
+permissions:
+  contents: read
+jobs:
+  circuit-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Gravel Ridge 3-lap and terrain regressions
+        run: node --test tests/circuit.test.mjs
+      - name: RoadLab shared surface regressions
+        run: node --test tests/roadlab.test.mjs
+      - name: Existing arcade smoke tests
+        run: node tests/smoke-test.cjs
+      - name: Existing WebGL smoke tests
+        run: node tests/3d-smoke-test.cjs

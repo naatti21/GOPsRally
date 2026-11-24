@@ -20,10 +20,10 @@ const palette = [
 const grass = [.22,.36,.24];
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const smooth = (n) => { const t = clamp(n,0,1); return t*t*(3-2*t); };
-const wrap = (s) => ((s % LAP) + LAP) % LAP;
+const wrapDistance = (s, lap) => ((s % lap) + lap) % lap;
 
 export function centerline(distance) {
-  const s = wrap(distance);
+  const s = wrapDistance(distance,LAP);
   const arc = Math.PI * RADIUS;
   if (s < STRAIGHT) return {x:-RADIUS,z:s-STRAIGHT/2,theta:0,curve:0};
   if (s < STRAIGHT + arc) {
@@ -47,11 +47,11 @@ function relief(s) {
   return {height:crest+rise+4.6*bankWeight,bank:-.235*bankWeight};
 }
 
-function rowAt(s) {
-  const {x,z,theta,curve} = centerline(s);
-  const {height,bank} = relief(s);
+function rowAt(s,track) {
+  const {x,z,theta,curve} = track.centerline(s);
+  const {height,bank} = track.relief(s);
   const dx = Math.cos(theta), dz = -Math.sin(theta);
-  const vertices = offsets.map(lateral => {
+  const vertices = track.offsets.map(lateral => {
     const d = Math.abs(lateral);
     let y = height + bank*lateral;
     if (d > SHOULDER) {
@@ -59,7 +59,7 @@ function rowAt(s) {
       const edge = height+bank*side*SHOULDER, slope=bank*side;
       // On the descending side shorten the tail enough to end at zero
       // without overshooting below the flat infield.
-      const span=GRASS_EDGE-SHOULDER;
+      const span=track.offsets.at(-1)-SHOULDER;
       const run=slope<0 ? Math.min(span,2.9*edge/-slope) : span;
       const t=clamp((d-SHOULDER)/run,0,1);
       // Hermite to the surrounding flat ground, matching the shoulder slope.
@@ -70,9 +70,19 @@ function rowAt(s) {
   return {s,x,z,theta,curve,bank,height,vertices};
 }
 
-export function createSurface() {
-  const count = Math.ceil(LAP/STEP);
-  const rows = Array.from({length:count}, (_,i) => rowAt(i*LAP/count));
+const roadLab = {lap:LAP,finish:FINISH_S,step:STEP,offsets,centerline,relief};
+
+export function createSurface(track=roadLab) {
+  const {lap,finish,step}=track;
+  const widths=track.offsets;
+  const wrap=s=>wrapDistance(s,lap);
+  const count = Math.ceil(lap/step);
+  const rows = Array.from({length:count}, (_,i) => rowAt(i*lap/count,track));
+  const colors=widths.slice(1).map((right,i)=>{
+    const mid=(right+widths[i])/2;
+    const reference=mid*(Math.abs(mid)>SHOULDER ? GRASS_EDGE/widths.at(-1) : 1);
+    return palette[offsets.findIndex(n=>n>reference)-1];
+  });
   const triangles = [];
   const grid = new Map();
 
@@ -82,9 +92,15 @@ export function createSurface() {
     const gx = ((b.y-a.y)*vz-(c.y-a.y)*uz)/det;
     const gz = (ux*(c.y-a.y)-vx*(b.y-a.y))/det;
     const normalScale = 1/Math.hypot(gx,1,gz);
-    const finish = row && row.s>=FINISH_S && row.s<FINISH_S+3.2 && band>=6 && band<10;
-    const color=finish ? ((band+Math.floor((row.s-FINISH_S)/1.6))%2 ? [.90,.87,.74] : [.19,.22,.20])
-      : row ? palette[band] : grass;
+    const onGravel=widths[band]>=-ROAD_HALF && widths[band+1]<=ROAD_HALF;
+    const stripe = row && row.s>=finish-1.6 && row.s<finish+1.6 && onGravel;
+    let color=stripe ? ((band+Math.floor((row.s-finish+1.6)/1.6))%2 ? [.90,.87,.74] : [.19,.22,.20])
+      : row ? colors[band] : grass;
+    if (track!==roadLab && onGravel && !stripe && row) {
+      // Static variation in the terrain material gives the gravel optical flow.
+      const shade=1+.025*Math.sin(row.s*.49+band*.88)+.024*Math.sin(row.s*.17);
+      color=color.map(value=>value*shade);
+    }
     const t = {a,b,c,ux,uz,vx,vz,inv:1/det,gx,gz,nx:-gx*normalScale,ny:normalScale,nz:-gz*normalScale,
       band,row,next,color};
     triangles.push(t);
@@ -108,7 +124,7 @@ export function createSurface() {
 
   for (let i=0;i<rows.length;i++) {
     const row=rows[i], next=rows[(i+1)%rows.length];
-    for (let band=0;band<offsets.length-1;band++) {
+    for (let band=0;band<widths.length-1;band++) {
       const a=row.vertices[band], b=row.vertices[band+1];
       const c=next.vertices[band+1], d=next.vertices[band];
       triangle(a,c,b,band,row,next);
@@ -128,7 +144,7 @@ export function createSurface() {
       out.nx=t.nx; out.ny=t.ny; out.nz=t.nz;
       out.gx=t.gx; out.gz=t.gz;
       out.lateral=t.a.lateral*(1-u-v)+t.b.lateral*u+t.c.lateral*v;
-      out.s=wrap(t.row.s+nextWeight*LAP/count);
+      out.s=wrap(t.row.s+nextWeight*lap/count);
       out.bank=t.row.bank+(t.next.bank-t.row.bank)*nextWeight;
       out.curve=t.row.curve;
       out.theta=t.row.theta;
@@ -142,23 +158,23 @@ export function createSurface() {
   }
 
   function sampleRoad(s,lateral=0) {
-    if (Math.abs(lateral)>GRASS_EDGE) throw new RangeError("Lateral sample outside the ribbon");
-    const phase=wrap(s)*count/LAP;
+    if (Math.abs(lateral)>widths.at(-1)) throw new RangeError("Lateral sample outside the ribbon");
+    const phase=wrap(s)*count/lap;
     const i=Math.floor(phase), f=phase-i;
     const a=rows[i], b=rows[(i+1)%count];
-    const nextBand=offsets.findIndex(n=>n>lateral);
-    const band=nextBand<0 ? offsets.length-2 : nextBand-1;
-    const t=(lateral-offsets[band])/(offsets[band+1]-offsets[band]);
+    const nextBand=widths.findIndex(n=>n>lateral);
+    const band=nextBand<0 ? widths.length-2 : nextBand-1;
+    const t=(lateral-widths[band])/(widths[band+1]-widths[band]);
     const p=a.vertices[band], q=a.vertices[band+1], r=b.vertices[band+1], u=b.vertices[band];
     const blend = key => t>=f ? p[key]*(1-t)+q[key]*(t-f)+r[key]*f
       : p[key]*(1-f)+u[key]*(f-t)+r[key]*t;
     const hit=sample(blend("x"),blend("z"));
-    const {theta}=centerline(s);
+    const {theta}=track.centerline(wrap(s));
     const fx=Math.sin(theta), fz=Math.cos(theta), rx=fz, rz=-fx;
     const unit=(x,y,z)=>{const m=Math.hypot(x,y,z);return [x/m,y/m,z/m];};
-    return {...hit,
+    return {...hit,theta,
       normal:[hit.nx,hit.ny,hit.nz], tangent:unit(fx,hit.gx*fx+hit.gz*fz,fz),
       lateralDirection:unit(rx,hit.gx*rx+hit.gz*rz,rz)};
   }
-  return {rows,triangles,sample,sampleRoad};
+  return {rows,triangles,sample,sampleRoad,lap,finish};
 }

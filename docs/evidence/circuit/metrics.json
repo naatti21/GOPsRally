@@ -1,0 +1,69 @@
+{
+  "browser": "154.0.8037.57",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "softwareRenderer": "SwiftShader",
+  "render": {
+    "frames": 126,
+    "p50": 16.699999999999818,
+    "p95": 50,
+    "max": 50.100000000000364,
+    "terrainTriangles": 40322,
+    "batches": 15,
+    "drawCalls": 9,
+    "vertices": 17208,
+    "viewport": [
+      507,
+      1097
+    ]
+  },
+  "laps": [
+    52.208333333333336,
+    50.525,
+    50.525
+  ],
+  "phases": {
+    "approach": {
+      "contacts": 4,
+      "tyreGap": 0,
+      "bodyClearance": 0.5263051247666238,
+      "rollDegrees": 0.080929967574646,
+      "verticalMps": 3.077954573142686,
+      "speedMps": 52.85838735613254
+    },
+    "air": {
+      "contacts": 0,
+      "tyreGap": 4.916398865096676,
+      "bodyClearance": 5.733958146190458,
+      "rollDegrees": 0.002266116532999905,
+      "verticalMps": -2.333945198012859,
+      "speedMps": 45.65913347851443
+    },
+    "land": {
+      "contacts": 4,
+      "tyreGap": 0,
+      "bodyClearance": 0.44689514723770185,
+      "rollDegrees": -0.027827083134730424,
+      "verticalMps": -9.779498224140635,
+      "speedMps": 38.76764187502948
+    },
+    "bank": {
+      "contacts": 4,
+      "tyreGap": 0,
+      "bodyClearance": 0.5662658381140657,
+      "rollDegrees": -9.381520732602427,
+      "verticalMps": 0.4578962163057549,
+      "speedMps": 40.61641322411377
+    },
+    "finish": {
+      "contacts": 4,
+      "tyreGap": 0,
+      "bodyClearance": 0.5633560810810805,
+      "rollDegrees": -6.842855560747173e-16,
+      "verticalMps": 4.0142293844419344e-15,
+      "speedMps": 48.99869093349657
+    }
+  }
+}

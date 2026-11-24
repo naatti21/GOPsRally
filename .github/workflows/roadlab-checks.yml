@@ -1,0 +1,30 @@
+name: RoadLab 01 checks — no deploy
+on:
+  pull_request:
+    branches:
+      - integration/roadlab-turnpp-baseline
+    paths:
+      - 'roadlab/**'
+      - 'reference/**'
+      - 'tests/**'
+      - 'docs/ROADLAB_TASK_01.md'
+      - '.github/workflows/roadlab-checks.yml'
+permissions:
+  contents: read
+jobs:
+  node-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v4
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Road surface + contact + TURN++ regressions
+        run: node --test tests/roadlab.test.mjs
+      - name: Existing arcade smoke suite
+        run: node tests/smoke-test.cjs
+      - name: Existing 3D smoke suite
+        run: node tests/3d-smoke-test.cjs

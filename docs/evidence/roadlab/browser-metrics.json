@@ -1,0 +1,33 @@
+{
+  "browser": "154.0.8037.57",
+  "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "viewportCSS": [
+    390,
+    844
+  ],
+  "timing": {
+    "frames": 101,
+    "p50": 66.60000000000036,
+    "p95": 100,
+    "max": 150,
+    "terrainTriangles": 43202,
+    "drawCalls": 8,
+    "vertices": 130512,
+    "viewport": [
+      507,
+      1097
+    ]
+  },
+  "flights": [
+    {
+      "direction": 1,
+      "tyreGap": 4.70277902314575,
+      "bodyClearance": 5.546831285809208
+    },
+    {
+      "direction": -1,
+      "tyreGap": 4.701510192576176,
+      "bodyClearance": 5.54541263970788
+    }
+  ]
+}

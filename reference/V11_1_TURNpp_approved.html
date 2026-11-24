@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#101b19">
+  <meta name="description" content="GOPs Rally – a responsive, top-down arcade rally driving prototype.">
+  <title>GOPs Rally V11.1 — Steering A/B</title>
+  <style>
+
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#f8f4e7;background:#111e18;font-synthesis:none;font-optical-sizing:auto;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}button{font:inherit;touch-action:none;user-select:none;-webkit-user-select:none}#scene3d{position:fixed;inset:0;width:100%;height:100%;display:none;touch-action:none}.webgl-3d #scene3d{display:block}.webgl-3d #game{display:none}#game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,transparent 28%,rgba(0,0,0,.28) 100%)}
+.hud{position:fixed;top:0;left:0;right:0;display:flex;gap:1rem;align-items:start;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 18px) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));pointer-events:none;text-shadow:0 2px 12px #07130b}.brand{display:flex;gap:10px;align-items:center;font-size:18px;font-weight:900;letter-spacing:-.7px;line-height:.9}.brand-mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-style:italic;color:#19251e;background:#f3c44d;font-size:26px;transform:skew(-7deg);box-shadow:0 6px 18px #0004}.brand-mark span{font-size:13px;margin-left:-7px}.brand b{color:#f4c44d}.brand small{display:block;font-size:8px;letter-spacing:2px;margin-top:8px;color:#e9e8dfb8;font-weight:700}.times{display:flex;gap:18px;align-items:center}.times>div{display:flex;flex-direction:column;gap:4px}.eyebrow{font-size:9px;letter-spacing:1.7px;font-weight:800;color:#dedcc4be}.times strong{font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:.3px}
+.status-card{position:fixed;top:calc(env(safe-area-inset-top) + 78px);left:16px;display:flex;gap:9px;align-items:center;font-size:11px;background:rgba(10,27,20,.72);border:1px solid #ffffff26;padding:7px 11px 7px 7px;border-radius:99px;max-width:min(480px,calc(100% - 32px));backdrop-filter:blur(10px)}.surface-pill{background:#f0c756;color:#253024;font-weight:950;font-size:9px;letter-spacing:1px;border-radius:99px;padding:6px 8px;white-space:nowrap}.surface-pill.offroad{background:#e98652;color:#1e1b17}#message{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:#f4f4edec}
+.speed{position:fixed;right:18px;bottom:calc(191px + env(safe-area-inset-bottom));display:flex;align-items:baseline;gap:8px;text-shadow:0 4px 16px #08100a}.speed strong{font-size:clamp(40px,11vw,76px);font-style:italic;letter-spacing:-4px;line-height:1;font-weight:900;font-variant-numeric:tabular-nums}.speed div{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:900;letter-spacing:1.5px}.speed small{color:#f2c24c;font-size:9px}.camera-box{position:fixed;bottom:calc(194px + env(safe-area-inset-bottom));left:15px}.cam-title{font-size:9px;font-weight:800;letter-spacing:2px;color:#edebddbd;margin-bottom:7px;text-shadow:0 3px 8px #15231b}.camera-switch{display:flex;gap:3px;padding:4px;background:#12241acb;border:1px solid #ffffff28;border-radius:12px;backdrop-filter:blur(10px)}.camera-switch button{background:transparent;border:0;color:#e9eddfbf;font-weight:850;font-size:9px;letter-spacing:.6px;padding:9px 10px;border-radius:8px;cursor:pointer}.camera-switch button.active{background:#f2c24f;color:#1e2820}
+.controls{position:fixed;left:0;right:0;bottom:calc(39px + env(safe-area-inset-bottom));display:flex;align-items:end;justify-content:space-between;padding:0 max(19px,env(safe-area-inset-left)) 0 max(19px,env(safe-area-inset-right));gap:9px;pointer-events:none}.drive-btn{pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:1.5px solid #ffffff51;border-radius:24px;min-height:118px;min-width:min(29vw,132px);background:#15251dc9;color:#f7f2e4;box-shadow:0 9px 25px #030d075e,inset 0 1px #ffffff22;backdrop-filter:blur(12px);transition:background .1s,transform .1s}.drive-btn span{font-size:38px;line-height:1.05;font-weight:400}.drive-btn small{font-size:10px;letter-spacing:2px;font-weight:900}.drive-btn:active,.drive-btn.pressed{background:#f2c34c;color:#1b241c;transform:scale(.96);border-color:#f2c34c}.drive-btn.brake{background:#643d31c9;min-width:min(24vw,111px);min-height:94px;border-color:#ffbd9c7e}.drive-btn.brake span{font-size:27px;letter-spacing:3px}.drive-btn.brake:active,.drive-btn.brake.pressed{background:#ff9369;color:#261915}
+.pause-button{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 110px);background:#192a20c9;color:#fff8e4;border:1px solid #ffffff54;border-radius:10px;padding:9px 13px;cursor:pointer;font-size:15px;font-weight:900}.recover-button{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 165px);display:flex;align-items:center;gap:5px;background:#192a20d9;color:#f4dfb3;border:1px solid #ffffff54;border-radius:10px;padding:10px 11px;min-height:46px;cursor:pointer;font-size:20px;font-weight:800}.recover-button small{font-size:10px;letter-spacing:1px}.recover-button:active{background:#eac04f;color:#16271c}.overlay{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:22px;background:linear-gradient(135deg,#101d17ed,#111f17b9 56%,#1f2319dd);backdrop-filter:blur(8px)}.overlay.hidden{display:none}.panel{width:min(100%,490px);border:1px solid #f9ebc529;background:linear-gradient(145deg,#263c30f5,#132319fa);box-shadow:0 25px 100px #0008;border-radius:24px;padding:clamp(23px,6vw,42px);position:relative;overflow:hidden}.panel:before{content:'';position:absolute;right:-85px;top:-85px;width:230px;height:230px;border:45px solid #ffffff08;border-radius:50%}.kicker{font-size:10px;letter-spacing:2px;color:#f6c44f;font-weight:900}.panel-rule{height:3px;width:52px;background:#f3bd3b;margin:18px 0 24px}.panel h1{font-size:clamp(38px,8vw,64px);line-height:.96;letter-spacing:-2px;margin:0 0 19px;font-weight:950}.panel h1 em{font-style:normal;color:#f0c44c}.panel p{color:#e0e4d5c9;line-height:1.6;font-size:14px;max-width:360px;margin:0 0 24px}.instruction{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:800;letter-spacing:1px;white-space:nowrap;color:#f2e9d4;margin-bottom:19px}.instruction span{background:#e9e2d31e;border:1px solid #ffffff38;padding:8px 10px;border-radius:7px;font-size:14px}.instruction i{width:1px;height:20px;background:#ffffff45;margin:0 4px}.start-button{display:flex;width:100%;align-items:center;justify-content:space-between;padding:17px 19px;background:#f2c34d;color:#1c2a20;border:0;border-radius:12px;font-weight:950;letter-spacing:1.4px;font-size:14px;cursor:pointer}.start-button span{font-size:24px}.panel>small{display:block;margin-top:17px;font-size:10px;line-height:1.7;color:#dfdfd09f}.countdown{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(.86);z-index:4;pointer-events:none;opacity:0;color:#f7d26b;font-weight:950;font-style:italic;font-size:clamp(86px,23vw,170px);line-height:1;text-shadow:0 6px 28px #102116,0 0 50px #101b19;transition:opacity .13s,transform .13s}.countdown.show{opacity:1;transform:translate(-50%,-50%) scale(1)}.toast{position:fixed;left:50%;top:25%;transform:translate(-50%,-14px);padding:12px 20px;background:#17271ee8;border:1px solid #f1c24d90;border-radius:12px;font-weight:850;color:#f1cb58;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:6;white-space:nowrap}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:650px){.hud{padding-top:calc(env(safe-area-inset-top) + 12px)}.brand{font-size:14px;gap:7px}.brand-mark{width:31px;height:31px;font-size:20px;border-radius:9px}.brand small{font-size:6px;letter-spacing:1px}.times{gap:10px}.eyebrow{font-size:7px;letter-spacing:1px}.times strong{font-size:13px}.status-card{top:calc(env(safe-area-inset-top) + 59px);font-size:10px}.camera-box{bottom:calc(164px + env(safe-area-inset-bottom));left:12px}.camera-switch button{padding:7px 7px;font-size:8px}.speed{bottom:calc(165px + env(safe-area-inset-bottom));right:14px}.speed strong{font-size:48px}.drive-btn{min-width:29vw;min-height:102px;border-radius:20px}.drive-btn span{font-size:35px}.drive-btn.brake{min-height:88px}.pause-button{top:calc(env(safe-area-inset-top) + 96px)}.recover-button{top:calc(env(safe-area-inset-top) + 144px)}}
+@media(max-height:530px){.status-card{top:calc(env(safe-area-inset-top) + 55px)}.speed,.camera-box{bottom:calc(119px + env(safe-area-inset-bottom))}.drive-btn{min-height:72px}.drive-btn.brake{min-height:64px}.drive-btn span{font-size:26px}.drive-btn small{font-size:8px}.panel{padding:18px}.panel h1{font-size:35px}.panel p{font-size:12px;margin-bottom:12px}.panel-rule{margin:8px 0 12px}.panel>small{margin-top:6px}}
+
+
+.handling-box{position:fixed;bottom:calc(245px + env(safe-area-inset-bottom));left:12px;z-index:2}
+.handling-box .camera-switch{gap:1px}
+.handling-box .camera-switch button{padding:9px 10px;min-height:35px}
+@media(max-width:650px){.handling-box{bottom:calc(214px + env(safe-area-inset-bottom))}.handling-box .camera-switch button{font-size:9px;padding:7px 8px}}
+@media(max-height:530px){.handling-box{bottom:calc(164px + env(safe-area-inset-bottom))}.handling-box .camera-switch button{font-size:9px;padding:6px 7px}}
+
+.handling-box .cam-title{font-size:9px}
+.handling-box .camera-switch button{min-width:54px}
+@media(max-height:530px){.handling-box .camera-switch button{min-width:48px;padding:6px 8px;font-size:9px}}
+#fps{position:fixed;top:calc(env(safe-area-inset-top) + 13px);left:50%;transform:translateX(-50%);font-size:10px;font-weight:800;letter-spacing:1px;padding:5px 8px;background:#102219ba;border-radius:8px;color:#e6d9b2;pointer-events:none;z-index:3}
+</style>
+  
+  
+</head>
+<body>
+  <canvas id="scene3d" aria-label="3D rally world"></canvas>
+  <canvas id="game" aria-label="GOPs Rally circuit"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <header class="hud">
+    <div class="brand"><span class="brand-mark">G<span>↗</span></span><span>GOPS <b>RALLY</b><small>V11.1 · RIDGE CIRCUIT · STEERING TEST</small></span></div>
+    <div class="times">
+      <div><span class="eyebrow">LAP</span><strong id="lap">01</strong></div>
+      <div><span class="eyebrow">TIME</span><strong id="time">00:00.00</strong></div>
+      <div><span class="eyebrow">BEST</span><strong id="best">—</strong></div>
+    </div>
+  </header>
+  <section class="status-card" aria-live="polite"><span id="surface" class="surface-pill">GRAVEL</span><span id="message">Learn the road. Then find your pace.</span></section>
+  <div id="fps" aria-label="Approximate frames per second">FPS --</div>
+  <div class="speed"><strong id="speed">0</strong><div><span>ARCADE KM/H</span><small id="gear">TURN++ / ×0.80</small></div></div>
+
+  <aside class="handling-box" aria-label="Steering A/B test"><div class="cam-title">STEERING · RESETS</div><div class="camera-switch" role="group" aria-label="Steering sensitivity"><button data-handling="turnplus" type="button">TURN+</button><button data-handling="turnboost" type="button" class="active">TURN++</button></div></aside>
+  <aside class="camera-box"><div class="cam-title">CAMERA</div><div class="camera-switch" role="group" aria-label="Kameratila"><button data-camera="fixed" type="button" class="active">FIXED</button><button data-camera="chase" type="button">CHASE</button></div></aside>
+  <div id="controls" class="controls" aria-label="Driving controls">
+    <button id="left" class="drive-btn steer" aria-label="Steer left" type="button"><span>↶</span><small>LEFT</small></button>
+    <button id="brake" class="drive-btn brake" aria-label="Brake and reverse" type="button"><span>▮▮</span><small>BRAKE</small></button>
+    <button id="right" class="drive-btn steer" aria-label="Steer right" type="button"><span>↷</span><small>RIGHT</small></button>
+  </div>
+  <button id="pause" class="pause-button" type="button" aria-label="Pause or resume">Ⅱ</button>
+  <button id="recover" class="recover-button" type="button" aria-label="Return car to road" title="Return to road">↺ <small>RESET</small></button>
+  <div id="overlay" class="overlay">
+    <div class="panel">
+      <span class="kicker">GOPS RALLY / V11.1 · STEERING TEST</span>
+      <div class="panel-rule"></div>
+      <h1>LEARN THE ROAD.<br><em>FIND THE LIMIT.</em></h1>
+      <p>New 2.4 km closed circuit: sharper corners, climbs and crests. Light 3D for fast phone performance. Compare baseline TURN+ against TURN++ (faster turning on the SAME circuit). Switching resets the car. Brake and track unchanged. Landscape recommended.</p>
+      <div class="instruction"><span>↶ &nbsp; ↷</span> STEER <i></i><span>▮▮</span> BRAKE</div>
+      <button id="start" class="start-button" type="button">START DRIVING <span>→</span></button>
+      <small>Phone: touch controls · Computer: ← → / A D, Space to brake. Hold brake at a stop to reverse.</small>
+    </div>
+  </div>
+  <div id="countdown" class="countdown" role="status" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status"></div>
+<script>
+
+/* GOPs Rally — native WebGL2 3D scene, no CDN or runtime dependencies.
+ * Terrain, banked road, vegetation, chassis and four independent wheels use real 3D geometry.
+ * Arcade dynamics remain the responsibility of game.js; suspension is a visual response model.
+ */
+(() => {
+'use strict';
+const canvas = document.getElementById('scene3d');
+const forceCanvas = typeof location !== 'undefined' && new URLSearchParams(location.search).get('graphics') === '2d';
+const gl = forceCanvas ? null : canvas?.getContext('webgl2', {antialias:false,alpha:false,powerPreference:'high-performance'});
+if (!gl) { document.documentElement.classList.add('fallback-2d'); return; }
+const vs = `#version 300 es
+precision highp float;
+in vec3 aPos; in vec3 aNormal; in vec3 aColor;
+uniform mat4 uProj,uView,uModel;
+out vec3 vColor; out float vFog;
+void main(){
+ vec4 eye=uView*uModel*vec4(aPos,1.);
+ vec3 n=normalize(mat3(uModel)*aNormal);
+ float sun=max(.0,dot(n,normalize(vec3(-.44,.88,.19))));
+ vColor=aColor*(.60+.40*sun);
+ vFog=clamp((-eye.z-125.)/490.,0.,.48);
+ gl_Position=uProj*eye;
+}`;
+const fs = `#version 300 es
+precision mediump float;
+in vec3 vColor; in float vFog; out vec4 frag;
+void main(){ frag=vec4(mix(vColor,vec3(.23,.31,.27),vFog),1.); }`;
+function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
+let program;
+try {program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vs));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));}
+catch(e){console.error('WebGL2 initialization failed',e);document.documentElement.classList.add('fallback-2d');return;}
+const loc={pos:gl.getAttribLocation(program,'aPos'),normal:gl.getAttribLocation(program,'aNormal'),color:gl.getAttribLocation(program,'aColor'),projection:gl.getUniformLocation(program,'uProj'),view:gl.getUniformLocation(program,'uView'),model:gl.getUniformLocation(program,'uModel')};
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const V=(x,y,z)=>[x,y,z];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const norm=a=>{const d=Math.hypot(...a)||1;return a.map(x=>x/d);};
+function identity(){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);}
+function multiply(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o;}
+function translate(x,y,z){const m=identity();m[12]=x;m[13]=y;m[14]=z;return m;}
+function yaw(t){const m=identity(),c=Math.cos(t),s=Math.sin(t);m[0]=c;m[2]=-s;m[8]=s;m[10]=c;return m;}
+function roll(t){const m=identity(),c=Math.cos(t),s=Math.sin(t);m[0]=c;m[1]=s;m[4]=-s;m[5]=c;return m;}
+function pitch(t){const m=identity(),c=Math.cos(t),s=Math.sin(t);m[5]=c;m[6]=s;m[9]=-s;m[10]=c;return m;}
+function ortho(left,right,bottom,top,near,far){const m=identity();m[0]=2/(right-left);m[5]=2/(top-bottom);m[10]=-2/(far-near);m[12]=-(right+left)/(right-left);m[13]=-(top+bottom)/(top-bottom);m[14]=-(far+near)/(far-near);return m;}
+function lookAt(eye,target){const z=norm(sub(eye,target)),x=norm(cross([0,1,0],z)),y=cross(z,x);const m=identity();m[0]=x[0];m[4]=x[1];m[8]=x[2];m[1]=y[0];m[5]=y[1];m[9]=y[2];m[2]=z[0];m[6]=z[1];m[10]=z[2];m[12]=-x[0]*eye[0]-x[1]*eye[1]-x[2]*eye[2];m[13]=-y[0]*eye[0]-y[1]*eye[1]-y[2]*eye[2];m[14]=-z[0]*eye[0]-z[1]*eye[1]-z[2]*eye[2];return m;}
+function meshBuilder(){const data=[];
+ function tri(a,b,c,color){const n=norm(cross(sub(b,a),sub(c,a)));for(const p of [a,b,c])data.push(...p,...n,...color);}
+ function quad(a,b,c,d,color){tri(a,c,b,color);tri(a,d,c,color);}
+ function box(cx,cy,cz,w,h,d,color){const x=cx-w/2,X=cx+w/2,y=cy-h/2,Y=cy+h/2,z=cz-d/2,Z=cz+d/2;
+ const A=[x,y,z],B=[X,y,z],C=[X,Y,z],D=[x,Y,z],E=[x,y,Z],F=[X,y,Z],G=[X,Y,Z],H=[x,Y,Z];
+ quad(A,B,C,D,color);quad(F,E,H,G,color);quad(E,A,D,H,color);quad(B,F,G,C,color);quad(D,C,G,H,color);quad(E,F,B,A,color);
+ }
+ return {data,tri,quad,box};}
+function gpu(builder,dynamic=false){const vao=gl.createVertexArray(),buf=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(builder.data),dynamic?gl.DYNAMIC_DRAW:gl.STATIC_DRAW);
+ const stride=9*4;for(const [idx,offset] of [[loc.pos,0],[loc.normal,12],[loc.color,24]]){gl.enableVertexAttribArray(idx);gl.vertexAttribPointer(idx,3,gl.FLOAT,false,stride,offset);}gl.bindVertexArray(null);return {vao,buf,count:builder.data.length/9};}
+const C={terrain:[.20,.38,.265],terrain2:[.245,.425,.286],road:[.64,.565,.425],road2:[.70,.625,.473],edge:[.40,.345,.263],rut:[.49,.415,.318],stripe:[.97,.94,.78],finish:[.17,.235,.195],car:[.94,.39,.115],hood:[.98,.55,.20],roof:[.97,.89,.70],glass:[.14,.26,.31],rubber:[.055,.07,.065],steel:[.39,.42,.40],trunk:[.25,.18,.12]};
+// Geometry cache: 44m-padded grid bins include every centreline segment
+// that could affect the road, shoulder or the 3D vehicle at this location.
+// The cache is immutable once the static circuit is created.
+const ROAD_CELL=40, ROAD_PAD=45;
+let roadBins=null;
+function buildRoadBins(track){
+ roadBins=new Map();
+ for(let i=0;i<track.length;i++){
+  const a=track[i],b=track[(i+1)%track.length];
+  const x0=Math.floor((Math.min(a.x,b.x)-ROAD_PAD)/ROAD_CELL),x1=Math.floor((Math.max(a.x,b.x)+ROAD_PAD)/ROAD_CELL);
+  const z0=Math.floor((Math.min(a.z,b.z)-ROAD_PAD)/ROAD_CELL),z1=Math.floor((Math.max(a.z,b.z)+ROAD_PAD)/ROAD_CELL);
+  for(let gx=x0;gx<=x1;gx++)for(let gz=z0;gz<=z1;gz++){
+   const key=gx+','+gz;let set=roadBins.get(key);
+   if(!set){set=[];roadBins.set(key,set);}set.push(i);
+  }
+ }
+}
+// Exact same nearest-segment interpolation as the baseline, accelerated by
+// static spatial bins. Outside 45m from all segments there is no road effect.
+function roadAt(x,z,track){
+ const cell=roadBins?.get(Math.floor(x/ROAD_CELL)+','+Math.floor(z/ROAD_CELL));
+ if(!cell)return null;
+ let best=Infinity,out=null;
+ for(const i of cell){
+  const a=track[i],b=track[(i+1)%track.length];
+  const dx=b.x-a.x,dz=b.z-a.z,ll=dx*dx+dz*dz;
+  if(ll<1e-8)continue;
+  const t=clamp(((x-a.x)*dx+(z-a.z)*dz)/ll,0,1);
+  const px=a.x+t*dx,pz=a.z+t*dz;
+  const dd=(x-px)*(x-px)+(z-pz)*(z-pz);
+  if(dd>=best)continue;
+  best=dd;
+  const across=((x-px)*dz-(z-pz)*dx)/Math.sqrt(ll);
+  const bank=a.bank+(b.bank-a.bank)*t;
+  out={y:a.y+(b.y-a.y)*t+bank*across,dist:Math.sqrt(dd),across,index:i};
+ }
+ return out;
+}
+function roadSurface(x,z,track,ground,roadHalf){
+ const road=roadAt(x,z,track);
+ if(!road)return ground(x,z);
+ // A blended shoulder prevents a discontinuity when a wheel leaves the road.
+ const q=clamp((road.dist-(roadHalf-1))/7,0,1);
+ const blend=q*q*(3-2*q);
+ return road.y*(1-blend)+ground(x,z)*blend;
+}
+function terrainSurface(x,z,track,ground,roadHalf){
+ const natural=ground(x,z)-.3,road=roadAt(x,z,track);
+ if(!road || road.dist>roadHalf+19)return natural;
+ // Recess the underlying ground mesh, so no grass triangle can break through
+ // the banked road, even on sharp hairpins and elevation changes.
+ const q=clamp((road.dist-(roadHalf+7))/12,0,1),blend=q*q*(3-2*q);
+ return Math.min(natural,road.y-3+blend*30);
+}
+let initialized=false,world=[],body,wheels,groundFn,trackData,carTop=1.6;
+function buildWorld(track,trees,ground,roadHalf){
+ groundFn=ground;trackData=track;
+ buildRoadBins(track);
+ const t=meshBuilder();const step=12,minX=-505,maxX=530,minZ=-450,maxZ=450;
+ const heightCache=new Map();
+ const terr=(x,z)=>{const key=x+','+z;let y=heightCache.get(key);if(y===undefined){y=terrainSurface(x,z,track,ground,roadHalf);heightCache.set(key,y);}return y;};
+ for(let x=minX;x<maxX;x+=step)for(let z=minZ;z<maxZ;z+=step){
+ const a=[x,terr(x,z),z],b=[x+step,terr(x+step,z),z],c=[x+step,terr(x+step,z+step),z+step],d=[x,terr(x,z+step),z+step];
+ const color=((Math.floor(x/step)+Math.floor(z/step))&1)?C.terrain:C.terrain2;t.quad(a,b,c,d,color);
+ }world.push(gpu(t));
+ const strip=meshBuilder();const len=track.length;
+ function corner(node,s,raise){return [node.x+Math.cos(node.theta)*s,node.y+node.bank*s+raise,node.z-Math.sin(node.theta)*s];}
+ // Geometrically continuous strips share exactly the same endpoints; depth test handles bends.
+ for(let i=0;i<len;i++){
+ const a=track[i],b=track[(i+1)%len];
+ const bend=Math.abs(a.curve||0);const shrink=1-.12*clamp(bend/.5,0,1);
+ const wb=roadHalf*shrink;const wa=roadHalf*(1-.12*clamp(Math.abs(b.curve||0)/.5,0,1));
+ const bands=[[-wb-2.4,-wb,C.edge],[-wb,-3.6,C.road],[-3.6,-2.3,C.rut],[-2.3,2.3,i%12<6?C.road:C.road2],[2.3,3.6,C.rut],[3.6,wb,C.road],[wb,wb+2.4,C.edge]];
+ for(let j=0;j<bands.length;j++){
+ const [l,r,color]=bands[j];const la=l<=-wb?l+(wb-wa):l>=wb?l+(wa-wb):l;
+ const ra=r<=-wb?r+(wb-wa):r>=wb?r+(wa-wb):r;
+ strip.quad(corner(a,l,.055),corner(a,r,.055),corner(b,ra,.055),corner(b,la,.055),color);
+ }
+ }
+ world.push(gpu(strip));
+ const treeMesh=meshBuilder();let n=0;
+ // 3D low-poly pines, batched for mobile: <= 600 trees in two draw calls.
+ for(const tr of trees){if(++n%2===0)continue;const trunkY=tr.y+Math.max(1.4,tr.h*.26),height=tr.h*.92,r=tr.r*.72;
+ treeMesh.box(tr.x,tr.y+height*.14,tr.z,.9,height*.28,.9,C.trunk);
+ const base=tr.y+height*.22,top=tr.y+height*1.13;
+ for(let k=0;k<6;k++){
+ const a=k*Math.PI/3,b=(k+1)*Math.PI/3;
+ const p=[tr.x+Math.cos(a)*r,base,tr.z+Math.sin(a)*r],q=[tr.x+Math.cos(b)*r,base,tr.z+Math.sin(b)*r],tip=[tr.x,top,tr.z];
+ treeMesh.tri(p,q,tip,k%2?[.13,.27,.20]:[.18,.34,.23]);
+ }
+ }
+ world.push(gpu(treeMesh));
+ // Non-repeating grounded gravel flecks and darker worn patches provide
+ // persistent optical flow. These are world-space surfaces, not moving overlays
+ // or visual speed tricks. Unlike isolated posts they pass under the tires.
+ const gravel=meshBuilder();
+ const patchColor=[[.45,.38,.29],[.50,.43,.33],[.56,.47,.36],[.62,.53,.40]];
+ const random=n=>{const v=Math.sin(n*127.1+18.17)*43758.5453;return v-Math.floor(v);};
+ for(let i=0;i<track.length;i+=3){
+  const p=track[i],tx=Math.sin(p.theta),tz=Math.cos(p.theta),rx=Math.cos(p.theta),rz=-Math.sin(p.theta);
+  for(let j=0;j<4;j++){
+   const seed=i*17+j*131,across=(random(seed)*2-1)*(roadHalf-2.7);
+   const forward=(random(seed+1)-.5)*3;
+   const len=.55+random(seed+2)*1.7,wide=.25+random(seed+3)*.65;
+   const x=p.x+rx*across+tx*forward,z=p.z+rz*across+tz*forward;
+   const y=p.y+p.bank*across+.095;
+   const a=[x-rx*wide-tx*len,y,z-rz*wide-tz*len];
+   const b=[x+rx*wide-tx*len,y,z+rz*wide-tz*len];
+   const c=[x+rx*wide+tx*len,y,z+rz*wide+tz*len];
+   const d=[x-rx*wide+tx*len,y,z-rz*wide+tz*len];
+   gravel.quad(a,b,c,d,patchColor[Math.floor(random(seed+4)*patchColor.length)]);
+  }
+ }
+ if(gravel.data.length)world.push(gpu(gravel));
+ const flag=meshBuilder();const at=track[570 % track.length],theta=at.theta,fx=Math.sin(theta),fz=Math.cos(theta),rx=Math.cos(theta),rz=-Math.sin(theta);const w=roadHalf*2;
+ for(let k=0;k<10;k++)for(let q=0;q<2;q++){
+ const x1=-roadHalf+k*w/10,x2=-roadHalf+(k+1)*w/10,z1=q*1.6,z2=(q+1)*1.6;
+ const p=(x,z)=>[at.x+rx*x+fx*z,at.y+at.bank*x+.13,at.z+rz*x+fz*z];
+ flag.quad(p(x1,z1),p(x2,z1),p(x2,z2),p(x1,z2),(k+q)%2?C.stripe:C.finish);
+ }world.push(gpu(flag));
+ // Real volumetric car: chassis, roof, glazing, wing and distinct 3D tyres.
+ const car=meshBuilder();
+ car.box(0,.78,0,3.75,.98,6.35,C.car);
+ car.box(0,1.38,1.72,3.3,.32,2.15,C.hood);
+ car.box(0,1.45,-1.6,3.35,.42,1.85,C.car);
+ car.box(0,1.91,-.24,2.76,.32,2.75,C.roof);
+ car.box(0,1.67,.95,2.65,.63,.26,C.glass);
+ car.box(0,1.67,-1.39,2.55,.63,.23,C.glass);
+ for(const side of [-1,1]){
+ car.box(side*1.38,1.62,-.30,.17,.5,1.85,C.glass);
+ car.box(side*1.3,.71,2.95,.62,.12,.17,C.stripe);
+ car.box(side*1.3,.73,-3,.68,.17,.16,[.68,.12,.09]);
+ }
+ car.box(0,1.16,-3.27,4.15,.16,.31,C.rubber);
+ car.box(0,.84,3.23,2.3,.14,.15,C.steel);
+ body=gpu(car);
+ const wheel=meshBuilder();wheel.box(0,0,0,.95,1.1,1.45,C.rubber);wheel.box(-.50,0,0,.10,.67,.77,C.steel);wheels=gpu(wheel);
+ initialized=true;
+}
+const draw=(m,model)=>{gl.uniformMatrix4fv(loc.model,false,model);gl.bindVertexArray(m.vao);gl.drawArrays(gl.TRIANGLES,0,m.count);};
+let frame=0;
+function render(state,track,trees,ground,roadHalf){
+ if(!initialized)buildWorld(track,trees,ground,roadHalf);
+ const W=window.innerWidth,H=window.innerHeight;
+ const dpr=Math.min(window.devicePixelRatio||1,1.30); // V11 steady FPS on phones
+ const dw=Math.max(2,Math.round(W*dpr)),dh=Math.max(2,Math.round(H*dpr));
+ if(canvas.width!==dw||canvas.height!==dh){canvas.width=dw;canvas.height=dh;}
+ gl.viewport(0,0,dw,dh);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE); // Keep both faces visible on steep, banked track sections.
+ gl.clearColor(.17,.28,.21,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ const speed=clamp(state.speed/55,0,1),aspect=W/H;
+ // Classic FIXED offers a zoomed-out, compass-locked isometric stage view.
+ // Portrait remains viable, while landscape provides a longer readable road.
+ const fixed=state.camera==='fixed';
+ // Match the 2D fallback's physical screen scale. At 180 km/h (~50 m/s),
+ // 393 px / 136 m * 50 m/s ≈ 144 px/s of world-space optical flow.
+ // No fake speed: more scenery passes the camera because the car really moves.
+ const span=fixed?(aspect>1?124-speed*20:172-speed*20):178+speed*55;
+ const projection=ortho(-span*aspect*.5,span*aspect*.5,-span*.5,span*.5,5,850);
+ // This orbit's lookAt basis points camera-right toward world -X.
+ // Mirror X so screen-right agrees with car-right in the established 2D physics.
+ projection[0]*=-1;
+ const baseY=roadSurface(state.camX,state.camZ,track,ground,roadHalf),target=[state.camX,baseY,state.camZ];
+ const dir=state.camera==='chase'?state.camYaw:0,ss=Math.sin(dir),cc=Math.cos(dir);
+ // Elevated orbit with fixed heading or chase heading, respecting relief without camera roll.
+ const eye=fixed
+  ? [target[0],target[1]+187,target[2]-99]
+  : [target[0]-ss*128,target[1]+163,target[2]-cc*128];
+ const view=lookAt(eye,target);
+ gl.useProgram(program);gl.uniformMatrix4fv(loc.projection,false,projection);gl.uniformMatrix4fv(loc.view,false,view);
+ const I=identity();for(const m of world)draw(m,I);
+ // Four wheels track the terrain independently, body floats over axle averages.
+ const th=state.theta,si=Math.sin(th),co=Math.cos(th),fx=si,fz=co,rx=co,rz=-si;
+ let heights=[];for(const f of [-2.12,2.12])for(const s of [-1,1]){let x=state.x+f*fx+s*1.63*rx,z=state.z+f*fz+s*1.63*rz;heights.push(roadSurface(x,z,track,ground,roadHalf));}
+ const avg=heights.reduce((a,b)=>a+b,0)/4;
+ // exaggerated but bounded visual weight transfer; the simulation remains arcade physics.
+ const reliefRoll=Math.atan2((heights[0]+heights[2]-heights[1]-heights[3])*.5,3.25);
+ const reliefPitch=Math.atan2((heights[2]+heights[3]-heights[0]-heights[1])*.5,4.25);
+ const rollAngle=clamp((state.roll||0)*1.75+reliefRoll*.45,-.32,.32);
+ const pitchAngle=clamp((state.pitch||0)*1.7+reliefPitch*.44,-.28,.28);
+ const jounce=state.heave||0;
+ const base=multiply(translate(state.x,avg+.66+jounce,state.z),yaw(th));
+ const swung=multiply(base,multiply(roll(rollAngle),pitch(pitchAngle)));
+ draw(body,swung);
+ let idx=0;for(const f of [-2.12,2.12])for(const side of [-1,1]){
+ const h=heights[idx++];
+ const mount=multiply(translate(state.x+f*fx+side*1.72*rx,h+.52,state.z+f*fz+side*1.72*rz),yaw(th+(f>0?state.steer*.16:0)));
+ draw(wheels,mount);
+ }
+ // Simple spatial skid traces from real slip positions, lifted above the gravel surface.
+ if(state.skids?.length){const builder=meshBuilder();let prev=null;
+ for(const s of state.skids){if(prev&&prev.side===s.side&&s.t-prev.t<.14&&Math.hypot(s.x-prev.x,s.z-prev.z)<6){
+ const a=[prev.x,roadSurface(prev.x,prev.z,track,ground,roadHalf)+.21,prev.z],b=[s.x,roadSurface(s.x,s.z,track,ground,roadHalf)+.21,s.z],dx=b[0]-a[0],dz=b[2]-a[2],mag=Math.hypot(dx,dz)||1,wx=dz/mag*.24,wz=-dx/mag*.24;
+ builder.quad([a[0]-wx,a[1],a[2]-wz],[a[0]+wx,a[1],a[2]+wz],[b[0]+wx,b[1],b[2]+wz],[b[0]-wx,b[1],b[2]-wz],[.19,.17,.13]);
+ }prev=s;}
+ if(builder.data.length){const m=gpu(builder,true);draw(m,I);gl.deleteBuffer(m.buf);gl.deleteVertexArray(m.vao);}
+ }
+ gl.bindVertexArray(null);frame++;
+}
+window.GOPsRally3D={render,ready:true,
+ roadAt:(x,z,track)=>roadAt(x,z,track),
+ roadSurface:(x,z,track,ground,half)=>roadSurface(x,z,track,ground,half),
+ terrainSurface:(x,z,track,ground,half)=>terrainSurface(x,z,track,ground,half),
+ debugProjection:(angle=0)=>{const eye=[-Math.sin(angle)*128,163,-Math.cos(angle)*128],view=lookAt(eye,[0,0,0]),projection=ortho(-80,80,-80,80,5,850);projection[0]*=-1;return multiply(projection,view);}};
+document.documentElement.classList.add('webgl-3d');
+})();
+
+</script>
+<script>
+
+/* GOPs Rally 0.3 — standalone, offline-capable 3D arcade rally prototype.
+ * Rendered with the Canvas 2D API and a custom orthographic 2.5D projector.
+ * Height and camber are in the track geometry; production physics/3D are not claimed.
+ * No external packages or user accounts. High scores live on this device only.
+ */
+(() => {
+  'use strict';
+  const canvas = document.querySelector('#game');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const $ = id => document.getElementById(id);
+  const UI = { lap: $('lap'), time: $('time'), best: $('best'), speed: $('speed'), surface: $('surface'), message: $('message'), overlay: $('overlay'), start: $('start'), pause: $('pause'), toast: $('toast'), countdown: $('countdown') };
+  const PI2 = Math.PI * 2;
+  const ROAD_HALF = 9.5; // V11 track-only experiment; preserve physics.
+  // V11 Ridge Circuit: all-new 2.43km CLOSED loop. No V9/V10 route reused.
+  const COURSE = [[371,0],[397,64],[409,139],[381,211],[276,234],[148,195],[72,170],[30,218],[-39,279],[-118,276],[-176,233],[-247,210],[-345,191],[-405,138],[-393,64],[-352,0],[-309,-50],[-251,-85],[-204,-113],[-207,-175],[-214,-282],[-151,-354],[-46,-330],[37,-268],[106,-248],[185,-244],[236,-200],[240,-133],[255,-86],[314,-51]];
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const turnAngle = a => Math.atan2(Math.sin(a), Math.cos(a));
+  const length = (x, z) => Math.hypot(x, z);
+  const seeded = n => { let x = (Math.imul(n + 137, 1664525) + 1013904223) >>> 0; x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return (x >>> 0) / 4294967295; };
+  // Smooth rolling terrain, about 37m from the lowest to highest point along
+  // the circuit, with max centreline grade about 12%. No fake jump impulse yet.
+  const ground = (x, z) => 10*Math.sin(x*.006)+9*Math.cos(z*.007)+6*Math.sin((x+z)*.008);
+
+  function spline(p0, p1, p2, p3, t) {
+    const t2 = t * t, t3 = t2 * t;
+    return .5 * ((2 * p1) + (-p0 + p2) * t + (2*p0 - 5*p1 + 4*p2 - p3) * t2 + (-p0 + 3*p1 - 3*p2 + p3) * t3);
+  }
+  const track = [];
+  const SEGMENTS = COURSE.length * 38;
+  // Midpoint of the long southern approach straight, rather than the first hairpin.
+  const FINISH_IDX = 570; // Within the west-side straight; keep a run-up to T1.
+  const START_IDX = FINISH_IDX; // Start on the line, facing down the straight.
+  for (let i=0; i<COURSE.length; i++) {
+    const n = COURSE.length;
+    const p0=COURSE[(i+n-1)%n], p1=COURSE[i], p2=COURSE[(i+1)%n], p3=COURSE[(i+2)%n];
+    for (let k=0; k<38; k++) {
+      const t=k/38;
+      const x=spline(p0[0],p1[0],p2[0],p3[0],t), z=spline(p0[1],p1[1],p2[1],p3[1],t);
+      track.push({x,z,y:ground(x,z)+.45,theta:0,bank:0,curve:0});
+    }
+  }
+  let trackLength=0;
+  for(let i=0;i<track.length;i++){
+    const prev=track[(i+track.length-2)%track.length],next=track[(i+2)%track.length];
+    track[i].theta=Math.atan2(next.x-prev.x,next.z-prev.z);
+    const following=track[(i+1)%track.length];
+    trackLength+=length(following.x-track[i].x,following.z-track[i].z);
+  }
+  for(let i=0;i<track.length;i++){
+    const thBefore=track[(i+track.length-7)%track.length].theta;
+    const thAfter=track[(i+7)%track.length].theta;
+    const bend=turnAngle(thAfter-thBefore);
+    track[i].curve=bend;
+    track[i].bank=clamp(-bend*.68, -.155, .155);
+  }
+  const offset = (node, across, up=0) => ({x:node.x+Math.cos(node.theta)*across,z:node.z-Math.sin(node.theta)*across,y:node.y+node.bank*across+up});
+  function closestRoad(x,z){
+    let best=Infinity,idx=0;
+    for(let i=0;i<track.length;i++){
+      const p=track[i];const d=(x-p.x)**2+(z-p.z)**2;
+      if(d<best){best=d;idx=i;}
+    }
+    const at=track[idx];
+    const lateral=(x-at.x)*Math.cos(at.theta)-(z-at.z)*Math.sin(at.theta);
+    return {dist:Math.sqrt(best), idx, at, lateral};
+  }
+
+  const trees=[];
+  for(let i=0;i<540;i++){
+    const x=-485+seeded(i*5+1)*1000,z=-425+seeded(i*5+2)*845;
+    if(closestRoad(x,z).dist<ROAD_HALF+8)continue;
+    trees.push({x,z,y:ground(x,z),h:5+seeded(i*5+3)*13,r:3.5+seeded(i*5+4)*4.5,shape:seeded(i*5+5)});
+  }
+  const stones=[];
+  for(let i=0;i<150;i++){
+    const x=-480+seeded(i*17+8)*990,z=-425+seeded(i*23+17)*850;
+    if(closestRoad(x,z).dist<ROAD_HALF+2)continue;
+    stones.push({x,z,y:ground(x,z),r:.7+seeded(i*19+2)*2.4});
+  }
+
+  let w=0,h=0,dpr=1,last=performance.now(),toastUntil=0,frameCount=0;
+  const savedBest=()=>null; // Isolated V4 physics trial: no shared legacy records.
+  const state={
+    running:false,paused:false,t:0,lap:1,lapT:0,best:savedBest(),camera:'fixed',countdown:0,goFlash:0,
+    x:track[START_IDX].x,z:track[START_IDX].z,theta:track[START_IDX].theta,vx:0,vz:0,steer:0,yawRate:0,traction:1,sideAccel:0,
+    speed:0,camX:track[START_IDX].x,camZ:track[START_IDX].z,camY:track[START_IDX].y,camYaw:0,
+    closest:START_IDX,safeIdx:START_IDX,offroad:false,progress:START_IDX/track.length,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0,lapGuard:0
+  };
+  UI.best.textContent=state.best ? formatTime(state.best) : '—';
+  const input={left:false,right:false,brake:false};
+  // V7: isolate steering from grip. V6 is unchanged baseline, TURN+ has
+  // genuinely more available yaw (not merely a gain hidden under the cap),
+  // DRIFT+ shares that yaw but has reduced bounded lateral tyre acceleration.
+  // Never increase turn speed and reduce grip *unmeasured* in the same A/B.
+  const HANDLING=Object.freeze({
+    sharpplus: {yawGain:1.63, yawResponse:25, steerResponse:48, yawMax:1.64, capBonus:3,
+      sideForce:35, damping:3.7, breakaway:.12, align:1.15},
+    turnplus: {yawGain:1.95, yawResponse:30, steerResponse:58, yawMax:2.3, yawReserve:48,
+      sideForce:35, damping:3.7, breakaway:.12, align:1.00},
+    // V11.1 test: same engine/brakes/tyre breakaway, +~15% steering authority
+    // at speed and ~12% extra lateral force so the travel direction also turns.
+    turnboost: {yawGain:2.22, yawResponse:31, steerResponse:58, yawMax:2.58, yawReserve:57,
+      sideForce:39.2, damping:3.7, breakaway:.12, align:1.00},
+    driftplus: {yawGain:1.95, yawResponse:30, steerResponse:58, yawMax:2.3, yawReserve:48,
+      sideForce:22, damping:2.8, breakaway:.12, align:.90}
+  });
+  const COMMON_TIRE=Object.freeze({offroadForce:13});
+  // V8 SPEED TEST ONLY: keep V7 TURN+ / DRIFT+ steering and grip tables intact.
+  // The speedometer intentionally reports 80% of world units converted to km/h.
+  // 195 displayed arcade-km/h corresponds to 243.75 world-km/h.
+  const SPEEDOMETER_SCALE=.80;
+  const TARGET_DISPLAY_KMH=195;
+  const TARGET_WORLD_MPS=TARGET_DISPLAY_KMH/(3.6*SPEEDOMETER_SCALE);
+  // V7 acceleration at low speed stays near 17 m/s². Adjust high-speed drag
+  // to approach the new target on flat terrain, accounting for rolling loss.
+  const AERO_DRAG=(17-.015*TARGET_WORLD_MPS)/(TARGET_WORLD_MPS*TARGET_WORLD_MPS);
+  let handling='turnboost'; // V11.1 A/B: faster TURN++ default; TURN+ kept unchanged.
+  function setHandling(value){
+    if(!Object.prototype.hasOwnProperty.call(HANDLING,value))return;
+    handling=value;
+    $('gear').textContent=(value==='turnboost'?'TURN++':'TURN+')+' / ×0.80';
+    document.querySelectorAll('[data-handling]').forEach(b=>b.classList.toggle('active',b.dataset.handling===value));
+    // Full reset avoids comparing a fresh handling model with the former
+    // preset's drift momentum. Race records remain disabled in sandbox.
+    resetCar();
+    // The launch GO! overlay used to get stuck after switching a test preset.
+    UI.countdown.classList.remove('show');
+    UI.countdown.textContent='';
+    Object.keys(input).forEach(k=>input[k]=false);
+    showToast('HANDLING: '+value.toUpperCase()+' / RESET',1.4);
+  }
+  document.querySelectorAll('[data-handling]').forEach(b=>b.addEventListener('click',()=>setHandling(b.dataset.handling)));
+
+
+  function resetCar(){
+    const p=track[START_IDX];Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,steer:0,yawRate:0,traction:1,sideAccel:0,speed:0,
+      camX:p.x,camZ:p.z,camY:p.y,camYaw:0,lap:1,lapT:0,lapGuard:0,countdown:0,goFlash:0,closest:START_IDX,safeIdx:START_IDX,offroad:false,dust:[],skids:[],skidClock:0,roll:0,pitch:0,heave:0});
+  }
+  // Manual recovery preserves the current lap and its elapsed time.
+  // Use the last safe road sample, never the nearest piece of road off-track.
+  function recoverCar(){
+    if(!state.running || state.paused)return;
+    const idx=state.safeIdx;
+    const p=track[idx];
+    Object.assign(state,{x:p.x,z:p.z,theta:p.theta,vx:0,vz:0,speed:0,steer:0,yawRate:0,traction:1,sideAccel:0,
+      camX:p.x,camZ:p.z,camY:p.y,camYaw:state.camera==='fixed'?0:p.theta,
+      closest:idx,offroad:false,dust:[],skidClock:0,roll:0,pitch:0,heave:0});
+    Object.keys(input).forEach(k=>input[k]=false);
+    Object.values(btnMap).forEach(b=>b.classList.remove('pressed'));
+    held.clear();
+    showToast('BACK ON TRACK',1.2);
+  }
+  function resize(){
+    w=window.innerWidth;h=window.innerHeight;
+    dpr=Math.min(window.devicePixelRatio||1,1.75);
+    canvas.width=Math.max(1,Math.round(w*dpr));canvas.height=Math.max(1,Math.round(h*dpr));
+    canvas.style.width=w+'px';canvas.style.height=h+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize',resize,{passive:true});resize();
+  function formatTime(t){
+    const cs=Math.floor((t%1)*100);const s=Math.floor(t)%60,m=Math.floor(t/60);
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
+  }
+  function showToast(text,duration=2){UI.toast.textContent=text;UI.toast.classList.add('show');toastUntil=performance.now()+duration*1000;}
+  function cameraMode(mode){if(!['fixed','chase'].includes(mode))return;state.camera=mode;document.querySelectorAll('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));showToast('CAMERA: '+({fixed:'FIXED',chase:'CHASE'}[mode]),1.1);}
+  document.querySelectorAll('[data-camera]').forEach(b=>b.addEventListener('click',()=>cameraMode(b.dataset.camera)));
+  function pause(){if(!state.running)return;state.paused=!state.paused;UI.overlay.classList.toggle('hidden',!state.paused);UI.start.innerHTML=state.paused?'RESUME DRIVING <span>→</span>':'START DRIVING <span>→</span>';UI.pause.textContent=state.paused?'▶':'Ⅱ';Object.keys(input).forEach(k=>input[k]=false);}
+  UI.pause.addEventListener('click',pause);
+  $('recover').addEventListener('click',recoverCar);
+  UI.start.addEventListener('click',()=>{
+    if(!state.running){
+      resetCar();state.running=true;state.paused=false;state.t=0;state.countdown=2;
+      UI.countdown.textContent='2';UI.countdown.classList.add('show');
+    } else state.paused=false;
+    UI.overlay.classList.add('hidden');UI.pause.textContent='Ⅱ';
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.hidden && state.running && !state.paused)pause();});
+  const btnMap={left:$('left'),right:$('right'),brake:$('brake')};
+  Object.entries(btnMap).forEach(([name,btn])=>{
+    const pressed = e=>{e.preventDefault();input[name]=true;btn.classList.add('pressed');try{btn.setPointerCapture(e.pointerId);}catch{}};
+    const released = e=>{if(e)e.preventDefault();input[name]=false;btn.classList.remove('pressed');};
+    btn.addEventListener('pointerdown',pressed);btn.addEventListener('pointerup',released);btn.addEventListener('pointercancel',released);btn.addEventListener('lostpointercapture',released);
+  });
+  const keys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'brake',ArrowDown:'brake',KeyS:'brake'};
+  const held=new Set();
+  function rebuildKeys(){for(const c of ['left','right','brake'])input[c]=[...held].some(k=>keys[k]===c)||btnMap[c].classList.contains('pressed');}
+  window.addEventListener('keydown',e=>{
+    if(keys[e.code]){e.preventDefault();held.add(e.code);rebuildKeys();}
+    else if(e.code==='Escape'&&!e.repeat)pause();
+    else if(e.code==='Digit1')cameraMode('fixed');
+    else if(e.code==='Digit2')cameraMode('chase');
+  });
+  window.addEventListener('keyup',e=>{if(keys[e.code]){e.preventDefault();held.delete(e.code);rebuildKeys();}});
+  window.addEventListener('blur',()=>{held.clear();rebuildKeys();});
+
+  function update(dt){
+    if(!state.running||state.paused)return;
+    dt=Math.min(.045,dt);
+    if(state.countdown>0){
+      state.countdown=Math.max(0,state.countdown-dt);
+      if(state.countdown>0)UI.countdown.textContent=String(Math.ceil(state.countdown));
+      else {UI.countdown.textContent='GO!';state.goFlash=.55;}
+      return; // Keep the car stationary and don't start the lap clock yet.
+    }
+    if(state.goFlash>0){
+      state.goFlash=Math.max(0,state.goFlash-dt);
+      if(state.goFlash===0)UI.countdown.classList.remove('show');
+    }
+    state.t+=dt;state.lapT+=dt;state.lapGuard+=dt;
+    const oldX=state.x,oldZ=state.z;
+    const near=closestRoad(oldX,oldZ);
+    const road=near.dist<ROAD_HALF+.6;
+    state.offroad=!road;
+    state.closest=near.idx;
+    if(road && near.dist<ROAD_HALF*.7)state.safeIdx=near.idx;
+    const rightTurn=(input.right?1:0)-(input.left?1:0);
+    const tune=HANDLING[handling];
+    // Digital steering becomes decisive within a few frames; preset affects
+    // response of the chassis, not the tire-grip budget.
+    state.steer=lerp(state.steer,rightTurn,1-Math.exp(-dt*tune.steerResponse));
+    let vx=state.vx,vz=state.vz;
+    let speed=length(vx,vz);
+    // V4 used TWO different steering brakes: yawAuthority removed up to 60%
+    // at speed, while aligning torque canceled the turn when the car slid.
+    // V5 retains yaw inertia but prioritizes driver's steering during input.
+    const highSpeed=clamp((speed-15)/35,0,1);
+    const speedAuthority=1-.18*highSpeed;
+    const fOldX=Math.sin(state.theta),fOldZ=Math.cos(state.theta);
+    const rOldX=Math.cos(state.theta),rOldZ=-Math.sin(state.theta);
+    const oldSide=vx*rOldX+vz*rOldZ,oldForward=vx*fOldX+vz*fOldZ;
+    const oldSlip=Math.atan2(oldSide,Math.max(3,Math.abs(oldForward)));
+    // Strong self-alignment ONLY when the driver eases off the wheel;
+    // during steering, the wheel must not fight the yaw correction.
+    const alignWeight=1-.85*Math.abs(state.steer);
+    // Slip alignment is not a magnetic snap: it nudges the chassis yaw,
+    // never alters world-space velocity directly.
+    const correctiveYaw=tune.align*clamp(oldSlip,-.52,.52)*alignWeight;
+    const steerYaw=state.steer*(.96+.36*clamp(speed/25,0,1))
+      *speedAuthority*clamp(speed/3,0,1)*(road?1:.82)*tune.yawGain;
+    // V6 coupling was the root problem: steering's yaw cap was derived from
+    // tyre grip, so extra yawGain was often clipped and looked identical.
+    // V7 deliberately separates chassis rotation authority from lateral grip.
+    // Car can point into a slide while its actual velocity keeps going; the
+    // tyre cap still prevents instantly changing the path of travel.
+    const capForce=road?tune.sideForce+(tune.capBonus||0):COMMON_TIRE.offroadForce;
+    const yawCap=tune.yawReserve && road
+      ? Math.min(tune.yawMax,.30+tune.yawReserve/Math.max(17,speed))
+      : Math.min(1.9,.20+capForce/Math.max(17,speed));
+    const targetYaw=clamp(steerYaw+correctiveYaw,-yawCap,yawCap);
+    const countersteering=state.yawRate*state.steer<-.06;
+    // Faster neutral settle on V7, but finite yaw and tyre acceleration.
+    const yawResponse=speed<9?24:Math.abs(state.steer)<.05?(tune.yawReserve?7.2:4.8):countersteering?28:tune.yawResponse;
+    state.yawRate=lerp(state.yawRate,targetYaw,1-Math.exp(-dt*yawResponse));
+    state.yawRate=clamp(state.yawRate,-tune.yawMax,tune.yawMax);
+    state.theta=turnAngle(state.theta+state.yawRate*dt);
+    const fX=Math.sin(state.theta),fZ=Math.cos(state.theta);
+    const rX=Math.cos(state.theta),rZ=-Math.sin(state.theta);
+    const forward=vx*fX+vz*fZ,lateral=vx*rX+vz*rZ;
+    const yawMatchesCurve=Math.sign(state.steer)===Math.sign(near.at.curve);
+    const banking=road&&yawMatchesCurve?Math.abs(near.at.bank)*5.5:0;
+    // V3: the tyre can change travel direction only through a BOUNDED lateral
+    // acceleration. Never replace current sideways velocity by a new heading.
+    // This avoids V2's artificial return to whichever direction the nose points.
+    // Slip angle and turn demand progressively reduce available grip; recovery
+    // is slower than breakaway so the transition cannot snap between states.
+    const slipAngle=Math.atan2(lateral,Math.max(3,Math.abs(forward)));
+    // Road force is sufficient to re-catch a modest slide; oversteer still
+    // happens if speed*turn exceeds this limit. Grass has its own lower cap
+    // but must never turn into an almost frictionless infinite slide.
+    const forceBudget=road?tune.sideForce:COMMON_TIRE.offroadForce;
+    const turnDemand=Math.abs(state.yawRate*forward);
+    const overload=clamp((turnDemand-forceBudget*.85)/(forceBudget*.8),0,1);
+    const sliding=clamp((Math.abs(slipAngle)-.13)/.42,0,1);
+    const targetTraction=road
+      ? 1-tune.breakaway*Math.max(overload,sliding)
+      : .76;
+    const gripResponse=targetTraction<state.traction?3.0:2.2;
+    state.traction=lerp(state.traction,targetTraction,1-Math.exp(-dt*gripResponse));
+    const sideCap=forceBudget*state.traction+(road?banking*.3:0);
+    const desiredSideAccel=-lateral*(road?tune.damping:1.7);
+    const actualSideAccel=clamp(desiredSideAccel,-sideCap,sideCap);
+    state.sideAccel=actualSideAccel;
+    vx+=actualSideAccel*rX*dt;vz+=actualSideAccel*rZ*dt;
+    speed=length(vx,vz);
+    const hillBefore=track[(near.idx+track.length-5)%track.length],hillAfter=track[(near.idx+5)%track.length];
+    const grade=(hillAfter.y-hillBefore.y)/Math.max(1,length(hillAfter.x-hillBefore.x,hillAfter.z-hillBefore.z));
+    const goingForward=Math.cos(state.theta-near.at.theta);
+    // Off-road slowing is drag opposing movement, not negative engine torque.
+    // Holding BRAKE slows the car, then intentionally selects reverse.
+    const forwardSpeed=vx*fX+vz*fZ;
+    // V8.1: reduce the commanded brake deceleration by precisely 5%; air drag and off-road drag remain unchanged.
+    const a=(input.brake?-32.3:17)-AERO_DRAG*speed*speed*Math.sign(forwardSpeed||1)-grade*13*goingForward;
+    vx+=fX*a*dt;vz+=fZ*a*dt;
+    if(!road){
+      const v=length(vx,vz),slow=Math.max(0,1-13*dt/Math.max(.001,v));
+      vx*=slow;vz*=slow;
+    }
+    if(input.brake){
+      const back=vx*fX+vz*fZ;
+      if(back < -7){vx+=(-7-back)*fX;vz+=(-7-back)*fZ;}
+    }
+    vx*=Math.exp(-dt*.015);vz*=Math.exp(-dt*.015);
+    state.vx=vx;state.vz=vz;state.x+=vx*dt;state.z+=vz*dt;
+    state.speed=length(vx,vz);
+    const after=closestRoad(state.x,state.z);
+    // Visual body motion: short-travel, damped arcade suspension. Not full rigid-body dynamics.
+    const bodyEase=1-Math.exp(-dt*9);
+    // Body lean follows APPLIED lateral acceleration, not the steering button.
+    // At high speed the same turn input can exceed grip and produce less actual
+    // side force, which is exactly what the chassis motion should communicate.
+    state.roll=lerp(state.roll,clamp(-state.sideAccel*.018,-.24,.24),bodyEase);
+    state.pitch=lerp(state.pitch,(input.brake?-.14:.045)*clamp(state.speed/18,0,1),bodyEase);
+    // Road-surface vibration frequency follows true distance/time travelled.
+    state.heave=Math.sin(state.t*(10+state.speed*.25))*clamp(state.speed/45,0,1)*.11;
+    state.progress=after.idx/track.length;
+    const finish=track[FINISH_IDX],fnX=Math.sin(finish.theta),fnZ=Math.cos(finish.theta);
+    const pre=(oldX-finish.x)*fnX+(oldZ-finish.z)*fnZ;
+    const post=(state.x-finish.x)*fnX+(state.z-finish.z)*fnZ;
+    const finishGap=Math.abs(after.idx-FINISH_IDX);
+    const nearFinish=Math.min(finishGap,track.length-finishGap)<10;
+    if(pre<0&&post>=0&&nearFinish&&after.dist<ROAD_HALF+.6&&
+       (vx*fnX+vz*fnZ)>3&&state.lapGuard>15){
+      const finished=state.lapT;
+      if(!state.best||finished<state.best){state.best=finished;/* V4 trial: never write production high scores. */showToast('NEW BEST · '+formatTime(finished),3);}
+      else showToast('LAP '+state.lap+' · '+formatTime(finished),3);
+      state.lap++;state.lapT=0;state.lapGuard=0;
+    }
+    state.closest=after.idx;
+    const cm=state.camera;
+    const desiredYaw=cm==='fixed'?0:state.theta;
+    if(cm==='fixed')state.camYaw=lerp(state.camYaw,0,1-Math.exp(-dt*2.6));
+    else state.camYaw+=turnAngle(desiredYaw-state.camYaw)*(1-Math.exp(-dt*3.3));
+    // The car is offset toward the bottom of the view as speed rises.
+    // World-locked camera sees the approaching road without hiding the car.
+    // Shift the viewport along the actual velocity vector for road anticipation.
+    // Use velocity rather than just the car's nose, especially while drifting.
+    // Fixed landscape framing: avoid pushing the car under the touch controls
+    // when the road heads toward the bottom of a world-locked view.
+    const lead=Math.min(9+clamp(state.speed/50,0,1)*25,w>h?26:34);
+    const motionSpeed=Math.max(1,length(state.vx,state.vz));
+    const motionX=state.vx/motionSpeed,motionZ=state.vz/motionSpeed;
+    const targetX=state.x+motionX*lead,targetZ=state.z+motionZ*lead;
+    // Camera must keep up with ~68 m/s in V8. Faster response above 100 km/h
+    // reduces the car-to-camera lag; lookahead stays velocity-based for slides.
+    const followHz=5.5+6.0*clamp(state.speed/55,0,1);
+    const camK=1-Math.exp(-dt*followHz);
+    state.camX=lerp(state.camX,targetX,camK);state.camZ=lerp(state.camZ,targetZ,camK);
+    state.camY=lerp(state.camY,after.at.y,camK);
+    // Skid traces mark actual slip, sampled independently of the render frame rate.
+    state.skidClock+=dt;
+    const slip=Math.abs(vx*Math.cos(state.theta)-vz*Math.sin(state.theta));
+    if(road&&state.speed>13&&slip>2.15&&state.skidClock>.045){
+      state.skidClock=0;
+      const fx=Math.sin(state.theta),fz=Math.cos(state.theta),rx=Math.cos(state.theta),rz=-Math.sin(state.theta);
+      for(const side of [-1,1]){
+        const sx=state.x-2.3*fx+side*1.62*rx;
+        const sz=state.z-2.3*fz+side*1.62*rz;
+        const y=after.at.y+after.at.bank*after.lateral+.2;
+        state.skids.push({x:sx,z:sz,y,side,t:state.t});
+      }
+    }
+    state.skids=state.skids.filter(p=>state.t-p.t<16).slice(-500);
+    if(road&&state.speed>16&&Math.abs(state.steer)>.12&&frameCount%2===0){
+      const side=seeded(frameCount*4)*2-1;
+      state.dust.push({x:state.x-Math.sin(state.theta)*4+side*2,z:state.z-Math.cos(state.theta)*4,y:after.at.y,life:.8,r:1.4+seeded(frameCount*17)*1.6});
+    }
+    if(!road&&frameCount%2===0){state.dust.push({x:state.x,z:state.z,y:after.at.y,life:1,r:2.4});}
+    state.dust.forEach(d=>{d.life-=dt;d.r+=dt*3.5;});state.dust=state.dust.filter(d=>d.life>0).slice(-32);
+  }
+  function camera(){
+    // Scale is deliberately generous: fast driving must still show braking distance.
+    const v=clamp(state.speed/56,0,1);
+    // Correct v1's inverted "zoom out": larger span genuinely shows more road.
+    // At 180 km/h V2 moved the ground only ~100 pixels/sec on a 393px-tall
+    // landscape phone. With this framing it is ~145px/sec without faking speed.
+    // The larger velocity-based lookahead reserves room for the next corner.
+    const worldHeight=w>h ? 124-v*20 : 172-v*20;
+    const scale=Math.min(h/worldHeight,w/(worldHeight*(w/h<.82?.54:.64)));
+    return {scale,cx:w*.5,cy:h*.51,yaw:state.camYaw,ct:Math.cos(.52),st:Math.sin(.52),sin:Math.sin(state.camYaw),cos:Math.cos(state.camYaw)};
+  }
+  function project(x,z,y,cam){
+    const dx=x-state.camX,dz=z-state.camZ;
+    const across=dx*cam.cos-dz*cam.sin,depth=dx*cam.sin+dz*cam.cos;
+    return {x:cam.cx+across*cam.scale,y:cam.cy-(depth*cam.ct+(y-state.camY)*cam.st)*cam.scale,depth};
+  }
+  function poly(ps,color,stroke,lineWidth=1){
+    if(ps.some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))return;
+    ctx.beginPath();ctx.moveTo(ps[0].x,ps[0].y);for(let j=1;j<ps.length;j++)ctx.lineTo(ps[j].x,ps[j].y);ctx.closePath();
+    ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lineWidth;ctx.stroke();}
+  }
+  function line(a,b,color,width=1){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
+  function visible(p,margin=110){return p.x>=-margin&&p.y>=-margin&&p.x<=w+margin&&p.y<=h+margin;}
+  function background(cam){
+    ctx.fillStyle='#253c2d';ctx.fillRect(0,0,w,h);
+    const tile=20;
+    const minX=Math.floor((state.camX-235)/tile),maxX=Math.ceil((state.camX+235)/tile);
+    const minZ=Math.floor((state.camZ-260)/tile),maxZ=Math.ceil((state.camZ+260)/tile);
+    for(let ix=minX;ix<=maxX;ix++)for(let iz=minZ;iz<=maxZ;iz++){
+      const x=ix*tile,z=iz*tile;
+      const mx=x+tile*.5,mz=z+tile*.5;
+      const pp=project(mx,mz,ground(mx,mz),cam);
+      if(!visible(pp,55))continue;
+      const p0=project(x,z,ground(x,z),cam),p1=project(x+tile,z,ground(x+tile,z),cam),p2=project(x+tile,z+tile,ground(x+tile,z+tile),cam),p3=project(x,z+tile,ground(x,z+tile),cam);
+      const noise=seeded(ix*10987+iz*2333);
+      const slope=(ground(x+tile,z)-ground(x,z))*1.7;
+      const light=clamp(28+noise*13+slope,22,50);
+      const green=Math.round(light*1.5),red=Math.round(light*.79),blue=Math.round(light*.96);
+      poly([p0,p1,p2,p3],`rgb(${red},${green},${blue})`);
+    }
+  }
+  function drawRoad(cam){
+    const segments=[];
+    for(let i=0;i<track.length;i++){
+      const a=track[i],b=track[(i+1)%track.length];
+      const m=project((a.x+b.x)*.5,(a.z+b.z)*.5,(a.y+b.y)*.5,cam);
+      if(!visible(m,210))continue;
+      segments.push({i,depth:m.depth,mid:m});
+    }
+    // Painter order gives more reliable intersections on serpentine roads.
+    segments.sort((a,b)=>b.depth-a.depth);
+    for(const seg of segments){
+      const i=seg.i,a=track[i],b=track[(i+1)%track.length];
+      const q=(at,s)=>{const p=offset(at,s);return project(p.x,p.z,p.y,cam);};
+      const lOuter=q(a,-ROAD_HALF-2.5),rOuter=q(a,ROAD_HALF+2.5),lOuter2=q(b,-ROAD_HALF-2.5),rOuter2=q(b,ROAD_HALF+2.5);
+      poly([lOuter,rOuter,rOuter2,lOuter2],i%18<9?'#665e49':'#70654e');
+      const left=q(a,-ROAD_HALF),right=q(a,ROAD_HALF),left2=q(b,-ROAD_HALF),right2=q(b,ROAD_HALF);
+      const shade=seeded(i*41);
+      poly([left,right,right2,left2],shade<.28?'#ae9a70':shade<.66?'#b7a47d':'#bdad89');
+      if(i%3===0){
+        line(q(a,-ROAD_HALF+1),q(b,-ROAD_HALF+1),'#d4c39d66',.85*cam.scale);
+        line(q(a,ROAD_HALF-1),q(b,ROAD_HALF-1),'#d4c39d66',.85*cam.scale);
+      }
+      const tire = i%9<7 ? '#7b6a5552' : '#b8a68155';
+      line(q(a,-3.3),q(b,-3.3),tire,.58*cam.scale);
+      line(q(a,3.3),q(b,3.3),tire,.58*cam.scale);
+      if(i%15===3){
+        const rock=q(a,-ROAD_HALF+4+seeded(i*2)*7);
+        ctx.fillStyle='#675f4c98';ctx.beginPath();ctx.arc(rock.x,rock.y,Math.max(.4,cam.scale*.3),0,PI2);ctx.fill();
+      }
+    }
+    // High contrast checkered start line, attached to the actual road bank.
+    const at=track[FINISH_IDX],follow=track[(FINISH_IDX+2)%track.length];
+    for(let j=0;j<10;j++){
+      const lo=-ROAD_HALF+j*(2*ROAD_HALF/10),hi=lo+2*ROAD_HALF/10;
+      const p0=offset(at,lo,.14),p1=offset(at,hi,.14),p2=offset(follow,hi,.14),p3=offset(follow,lo,.14);
+      poly([project(p0.x,p0.z,p0.y,cam),project(p1.x,p1.z,p1.y,cam),project(p2.x,p2.z,p2.y,cam),project(p3.x,p3.z,p3.y,cam)],j%2?'#faf0d7':'#243b31');
+    }
+  }
+  function foliage(cam){
+    const items=[];
+    for(const t of trees){const p=project(t.x,t.z,t.y,cam);if(!visible(p,80))continue;items.push({d:p.depth,t,p});}
+    items.sort((a,b)=>b.d-a.d);
+    for(const {t,p} of items){
+      const top=project(t.x,t.z,t.y+t.h,cam);const rad=Math.max(2,t.r*cam.scale);
+      const shadowX=p.x+rad*.55,shadowY=p.y+rad*.25;
+      ctx.fillStyle='#071e1680';ctx.beginPath();ctx.ellipse(shadowX,shadowY,rad*.85,rad*.35,-.3,0,PI2);ctx.fill();
+      line(p,top,'#463e2b',Math.max(1.1,cam.scale*.7));
+      const k=t.shape;
+      // Slightly irregular silhouette with multiple layered forest greens.
+      ctx.fillStyle=k<.4?'#183c2f':k<.75?'#214b37':'#2d5238';
+      ctx.beginPath();ctx.ellipse(top.x,top.y,rad*.96,rad*.77,-.32,0,PI2);ctx.fill();
+      ctx.fillStyle=k<.4?'#305e44':k<.75?'#326847':'#456d49';
+      ctx.beginPath();ctx.ellipse(top.x-rad*.25,top.y-rad*.19,rad*.62,rad*.5,-.32,0,PI2);ctx.fill();
+      ctx.fillStyle='#81a16c4d';ctx.beginPath();ctx.ellipse(top.x-rad*.36,top.y-rad*.38,rad*.22,rad*.14,-.35,0,PI2);ctx.fill();
+    }
+    for(const t of stones){const p=project(t.x,t.z,t.y,cam);if(!visible(p,12))continue;ctx.fillStyle='#918d747a';ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(1,t.r*cam.scale),Math.max(.7,t.r*cam.scale*.55),0,0,PI2);ctx.fill();}
+  }
+  function carPolygon(cam,pts,fill,stroke,wheel=false){
+    const th=state.theta,fx=Math.sin(th),fz=Math.cos(th),rx=Math.cos(th),rz=-Math.sin(th);
+    poly(pts.map(([side,front,height])=>project(state.x+side*rx+front*fx,state.z+side*rz+front*fz,ground(state.x,state.z)+.7+height+(wheel?0:state.roll*side+state.pitch*front+state.heave),cam)),fill,stroke,.7);
+  }
+  function carSegment(cam,a,b,color,width){
+    const th=state.theta,fx=Math.sin(th),fz=Math.cos(th),rx=Math.cos(th),rz=-Math.sin(th);
+    const toP=([side,front,height])=>project(state.x+side*rx+front*fx,state.z+side*rz+front*fz,ground(state.x,state.z)+.7+height+state.roll*side+state.pitch*front+state.heave,cam);
+    line(toP(a),toP(b),color,width*cam.scale);
+  }
+  function drawCar(cam){
+    const p=project(state.x,state.z,ground(state.x,state.z)+.35,cam);
+    if(!visible(p,65))return;
+    // Four solid rubber wheels; front wheels articulate with steering input.
+    for(const side of [-1,1])for(const f of [-2.25,2.25]){
+      carPolygon(cam,[[side*2.32,f-.99,.46],[side*2.32,f+.99,.46],[side*2.32,f+.99,1.24],[side*2.32,f-.99,1.24]],'#151b1a','#070d0b',true);
+      carSegment(cam,[side*2.5,f-1,.89],[side*2.5,f+1,.89],'#55605a',.12);
+    }
+    // 3D body sides, main paint and sculpted fenders.
+    carPolygon(cam,[[-1.94,-3.17,.5],[1.94,-3.17,.5],[1.94,3.18,.5],[-1.94,3.18,.5]],'#7c301f');
+    carPolygon(cam,[[1.94,-3.17,.5],[1.94,3.18,.5],[1.82,3.04,1.36],[1.82,-3.02,1.36]],'#a43e24');
+    carPolygon(cam,[[-1.94,-3.17,.5],[-1.94,3.18,.5],[-1.82,3.04,1.36],[-1.82,-3.02,1.36]],'#d76b2c');
+    carPolygon(cam,[[-1.82,-3.08,1.34],[1.82,-3.08,1.34],[1.9,-1.55,1.34],[1.77,1.74,1.34],[1.6,3.14,1.34],[-1.6,3.14,1.34],[-1.77,1.74,1.34],[-1.9,-1.55,1.34]],'#ee933a','#f7b95f');
+    // Deep hood shaping.
+    carPolygon(cam,[[-1.35,1.04,1.41],[1.35,1.04,1.41],[1.43,2.72,1.41],[-1.43,2.72,1.41]],'#edac47');
+    carPolygon(cam,[[-.42,1.17,1.43],[.42,1.17,1.43],[.57,2.8,1.43],[-.57,2.8,1.43]],'#d87e30');
+    // Side windows and rear glazing.
+    carPolygon(cam,[[-1.38,-1.52,1.48],[1.38,-1.52,1.48],[1.15,-.72,2.42],[-1.15,-.72,2.42]],'#24434a');
+    carPolygon(cam,[[-1.48,-.5,1.46],[1.48,-.5,1.46],[1.16,.95,2.35],[-1.16,.95,2.35]],'#203a47');
+    carPolygon(cam,[[-1.2,-.84,2.41],[1.2,-.84,2.41],[1.16,.91,2.41],[-1.16,.91,2.41]],'#f0e5c7');
+    // Windscreen and its reflection; the front of the car is +forward.
+    carPolygon(cam,[[-1.15,.96,2.39],[1.15,.96,2.39],[1.47,1.72,1.48],[-1.47,1.72,1.48]],'#274755');
+    carSegment(cam,[-.95,1.04,2.4],[.25,1.56,1.69],'#acc5c5a1',.12);
+    // Windshield roof and racing stripe.
+    carPolygon(cam,[[-.26,-.7,2.47],[.26,-.7,2.47],[.26,.84,2.47],[-.26,.84,2.47]],'#db6840');
+    // Headlights, grille and taillights.
+    for(const side of [-1,1]){
+      carPolygon(cam,[[side*1.03,2.88,1.48],[side*1.55,2.88,1.48],[side*1.46,3.18,1.46],[side*.98,3.18,1.46]],'#ffedbd');
+      carPolygon(cam,[[side*.89,-3.1,1.45],[side*1.65,-3.1,1.45],[side*1.63,-2.94,1.47],[side*.9,-2.94,1.47]],'#e64330');
+    }
+    carPolygon(cam,[[-.83,3.12,1.37],[.83,3.12,1.37],[.76,3.23,1.37],[-.76,3.23,1.37]],'#38413c');
+    carPolygon(cam,[[-2.0,-3.28,1.82],[2.0,-3.28,1.82],[2,-2.9,1.82],[-2,-2.9,1.82]],'#2c342c');
+    carSegment(cam,[-2.0,-3.28,1.82],[2,-3.28,1.82],'#f2cc74',.16);
+  }
+  function drawSkids(cam){
+    let last={};
+    for(const p of state.skids){
+      const age=state.t-p.t,prev=last[p.side];
+      if(prev&&p.t-prev.t<.22&&length(p.x-prev.x,p.z-prev.z)<12){
+        const a=project(prev.x,prev.z,prev.y,cam),b=project(p.x,p.z,p.y,cam);
+        if(visible(a,30)||visible(b,30))line(a,b,`rgba(59,45,33,${(.32*(1-age/16)).toFixed(3)})`,Math.max(1,cam.scale*.57));
+      }
+      last[p.side]=p;
+    }
+  }
+  function drawDust(cam){
+    for(const d of state.dust){const p=project(d.x,d.z,d.y,cam);if(!visible(p,50))continue;ctx.fillStyle=`rgba(213,199,158,${Math.max(0,d.life*.19)})`;ctx.beginPath();ctx.ellipse(p.x,p.y,d.r*cam.scale,d.r*cam.scale*.58,0,0,PI2);ctx.fill();}
+  }
+  function draw(){
+    if(w<1||h<1)return;
+    if(window.GOPsRally3D?.ready){
+      try{window.GOPsRally3D.render(state,track,trees,ground,ROAD_HALF);return;}
+      catch(e){console.error("3D scene error; falling back to Canvas",e);window.GOPsRally3D.ready=false;document.documentElement.classList.remove("webgl-3d");}
+    }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const cam=camera();
+    background(cam);drawRoad(cam);drawSkids(cam);foliage(cam);drawDust(cam);drawCar(cam);
+    // Minimal textured haze, no heavyweight postprocessing.
+    const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#0b25131a');grad.addColorStop(.7,'#00000000');grad.addColorStop(1,'#05160c30');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+  }
+  const fpsLabel=$('fps');let fpsFrames=0,fpsWindow=performance.now();
+  function updateHud(){
+    UI.time.textContent=formatTime(state.lapT);UI.lap.textContent=String(state.lap).padStart(2,'0');
+    UI.speed.textContent=String(Math.round(state.speed*3.6*SPEEDOMETER_SCALE));
+    UI.best.textContent=state.best?formatTime(state.best):'—';
+    UI.surface.textContent=state.offroad?'OFF ROAD':'GRAVEL';UI.surface.classList.toggle('offroad',state.offroad);
+    const forwardSpeed=state.vx*Math.sin(state.theta)+state.vz*Math.cos(state.theta);
+    const lateralSpeed=state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta);
+    const driftDeg=Math.abs(Math.atan2(lateralSpeed,forwardSpeed)*180/Math.PI);
+    // V11 track test: track and performance, not a new physics mode.
+    UI.message.textContent=state.offroad?'OFF ROAD · RESET to recover':
+      state.speed>12?'RIDGE CIRCUIT · '+(handling==='turnboost'?'TURN++':'TURN+')+' · '+Math.round(driftDeg)+'° SLIP':
+      'V11 RIDGE CIRCUIT · NEW CLOSED TRACK';
+  }
+  function tick(now){
+    try{
+      const dt=clamp((now-last)/1000,0,.05);last=now;frameCount++;
+      if(state.running&&!state.paused)update(dt);
+      draw();
+      fpsFrames++;
+      if(now-fpsWindow>=1000){
+        if(fpsLabel)fpsLabel.textContent=Math.round(fpsFrames*1000/(now-fpsWindow))+' FPS';
+        fpsFrames=0;fpsWindow=now;
+      }
+      if(frameCount%4===0)updateHud();
+      if(now>toastUntil)UI.toast.classList.remove('show');
+    }catch(e){console.error('GOPs Rally rendering error',e);UI.message.textContent='Driving error — check the console.';}
+    requestAnimationFrame(tick);
+  }
+  window.__gopsRallyDebug={getSnapshot:()=>({running:state.running,paused:state.paused,camera:state.camera,countdown:state.countdown,goFlash:state.goFlash,speed:state.speed,heading:state.theta,x:state.x,z:state.z,safeIdx:state.safeIdx,elapsed:state.lapT,lap:state.lap,offroad:state.offroad,trackSegments:SEGMENTS,finishIdx:FINISH_IDX,finishCurve:Math.abs(track[FINISH_IDX].curve),startIdx:START_IDX,skids:state.skids.length,roll:state.roll,pitch:state.pitch,yawRate:state.yawRate,traction:state.traction,sideAccel:state.sideAccel,handling,
+      displayedKmh:Math.round(state.speed*3.6*SPEEDOMETER_SCALE),speedScale:SPEEDOMETER_SCALE,
+      targetDisplayKmh:TARGET_DISPLAY_KMH,cameraFocus:{x:state.camX,z:state.camZ},
+      followErrorMeters:Math.hypot(state.camX-state.x,state.camZ-state.z),trackMeters:Math.round(trackLength),minTrackY:Math.min(...track.map(p=>p.y)),maxTrackY:Math.max(...track.map(p=>p.y)),roadWidth:ROAD_HALF*2,turnAuthority:HANDLING[handling].yawGain,sideForceBudget:HANDLING[handling].sideForce,trees:trees.length,canvas:[canvas.width,canvas.height],lateralSpeed:state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),slipDegrees:Math.atan2(state.vx*Math.cos(state.theta)-state.vz*Math.sin(state.theta),state.vx*Math.sin(state.theta)+state.vz*Math.cos(state.theta))*180/Math.PI}), reset:resetCar};
+  if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline cache unavailable',e)));
+  requestAnimationFrame(tick);
+})();
+
+
+</script>
+</body>
+</html>

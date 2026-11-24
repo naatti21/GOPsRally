@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="fi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>GOPsRally – oikeat harjanteet ja kallistettu mutka, 3D-koe</title>
+<style>
+:root{font-family:system-ui,-apple-system,Roboto,sans-serif;color:#f5f2e6;background:#0b1715;--gold:#f1c15d}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}button{font:inherit;touch-action:manipulation;cursor:pointer}canvas#scene3d{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.no-webgl #scene3d{display:none}.no-webgl #webgl-error{display:block}#webgl-error{display:none;position:fixed;top:35%;left:16px;right:16px;background:#3b1c1c;color:#fff;padding:18px;border-radius:14px;z-index:12}
+.top{position:fixed;top:calc(8px + env(safe-area-inset-top));left:9px;right:9px;display:grid;gap:4px;pointer-events:none;z-index:2;text-shadow:0 2px 7px #000}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.brand{font-size:13px;font-weight:950;letter-spacing:.4px}.brand b{color:var(--gold)}.pill{font-size:10px;font-weight:800;border:1px solid #e5eddd30;border-radius:8px;background:#0c1d18e8;padding:5px 7px;white-space:nowrap}
+.metrics{display:flex;flex-wrap:wrap;gap:4px}.metrics .pill{font-size:9.5px}
+#state[data-air="yes"]{background:#ad6027;color:white;border-color:#ffab64}
+#profilebox{position:fixed;top:calc(95px + env(safe-area-inset-top));left:9px;right:9px;z-index:2;display:flex;justify-content:center;pointer-events:none}
+#profile{width:min(100%,350px);height:70px;border:1px solid #a4c2ac55;border-radius:9px;background:#0b211dd5}
+.bottom{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;display:grid;gap:6px;max-width:500px;margin:auto}
+.selector{display:flex;gap:5px;justify-content:center}.selector button{flex:1;background:#132920e7;color:#f1e6ce;border:1px solid #79927a77;border-radius:10px;padding:7px 3px;font-weight:900;font-size:11px;min-height:42px}
+.selector button.chosen{background:#e5b951;color:#1e2719;border-color:#e5b951}
+.selector.compact button{min-height:38px;font-size:10.5px}
+.action{display:flex;gap:5px}.action button{font-weight:950;min-height:47px;border:0;border-radius:12px;color:#1a261b;background:#e9bb54;flex:1;font-size:13px}.action button.secondary{background:#20372ff2;color:#eee;border:1px solid #788c8188;flex:.6}
+#result{font-size:11px;font-weight:700;line-height:1.27;color:#f5eedc;text-align:center;background:#0b1f1be9;border:1px solid #ffffff24;border-radius:9px;padding:7px 6px;min-height:33px}
+#small-note{position:fixed;bottom:calc(245px + env(safe-area-inset-bottom));left:10px;right:10px;text-align:center;z-index:2;font-size:10px;opacity:.85;pointer-events:none;text-shadow:0 2px 5px #000}
+@media(max-height:740px) and (orientation:portrait){#profilebox{top:calc(84px + env(safe-area-inset-top))}#profile{height:59px}.selector button{min-height:36px}#small-note{display:none}}
+@media(orientation:landscape){#profilebox{left:auto;width:200px;right:10px;top:calc(55px + env(safe-area-inset-top))}#profile{width:195px;height:67px}.top .metrics{max-width:68%}.bottom{bottom:5px;max-width:940px;grid-template-columns:1.3fr 1.15fr 1fr}.selector button,.selector.compact button,.action button{min-height:35px;padding:5px 2px;font-size:10px}.bottom #result{grid-column:1/-1;padding:3px;min-height:16px}#small-note{display:none}}
+</style></head><body>
+<canvas id="scene3d" aria-label="Yhteinen 3D-tienpinta ja jousitettu auto"></canvas>
+<div id="webgl-error">Tämä 3D-koe tarvitsee WebGL2:n. Kokeile Android-Chromea.</div>
+<div class="top"><div class="topline"><span class="brand">GOPs<b>RALLY</b> · ROAD LAB 2</span><span class="pill">FPS <span id="fps">–</span></span></div>
+<div class="metrics"><span class="pill" id="state">TIELLÄ</span><span class="pill">PYÖRÄT <span id="contacts">4/4</span></span><span class="pill">ILMASSA <span id="air">0.00 s</span></span><span class="pill">KORKEUS <span id="gap">0.00 m</span></span></div>
+<div class="metrics"><span class="pill">VAUHTI <span id="speed">150</span></span><span class="pill">PITCH <span id="pitch">0°</span></span><span class="pill">ROLL <span id="roll">0°</span></span></div></div>
+<div id="profilebox"><canvas id="profile" width="350" height="70" aria-label="Ajoradan oikea korkeusprofiili ja auto"></canvas></div>
+<div id="small-note">AUTOMAATTINEN AJOLINJA · EI TURN++-AJOPÄIVITYS</div>
+<div class="bottom">
+<div class="selector"><button data-scenario="soft">LOIVA</button><button data-scenario="jump" class="chosen">HYPPYRI</button><button data-scenario="bank">CAMBER</button></div>
+<div class="selector compact"><button data-speed="65">65</button><button data-speed="150" class="chosen">150</button><button data-speed="195">195</button></div>
+<div class="selector compact"><button data-direction="forward" class="chosen">SUUNTA A</button><button data-direction="reverse">SUUNTA B</button></div>
+<div class="action"><button id="start">START</button><button class="secondary" id="reset">RESET</button></div>
+<div id="result" aria-live="polite">Valitse tien muoto ja nopeus. Auto kulkee testilinjaa automaattisesti.</div>
+</div>
+<script>/* GOPsRally 3D contact experiment v2: three actual road shapes, two directions.
+ * This is a constrained suspension/body test. Longitudinal movement is scripted
+ * along the centerline, NOT a complete steering or lateral grip model.
+ * Road drawing and wheel suspension sample the same triangulated mesh. */
+(function(root,factory){const out=factory();if(typeof module==='object'&&module.exports)module.exports=out;root.CrestProof=out;})(typeof globalThis!=='undefined'?globalThis:this,()=>{
+'use strict';
+const clamp=(a,l,h)=>Math.max(l,Math.min(h,a));
+const mix=(a,b,t)=>a+(b-a)*t;
+const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
+const DZ=.75,Z0=-220,Z1=220,HALF=9.5;
+const settings={
+ soft:{name:'LOIVA HARJANNE',detail:'Loiva kumpu: matalampi, nopeudesta riippuva keveneminen'},
+ jump:{name:'HYPPYRI',detail:'Jyrkempi tien oma harjanne: ilmassaolo ja laskeutuminen'},
+ bank:{name:'KALLISTETTU MUTKA',detail:'Kaareva tie ja fyysinen poikittaiskallistus'}
+};
+function centered(z){return 29*smooth((z+74)/148);}
+function centeredD(z){const u=(z+74)/148;return u>0&&u<1?29*6*u*(1-u)/148:0;}
+const shape={
+ soft:{cx:z=>0,dx:z=>0,height:z=>3.9*Math.exp(-((z/40)**2)),bank:z=>0},
+ jump:{cx:z=>0,dx:z=>0,height:z=>6.1*Math.exp(-((z/34)**2)),bank:z=>0},
+ bank:{cx:centered,dx:centeredD,height:z=>.85*Math.sin(z/63),bank:z=>.235*smooth((z+82)/46)*(1-smooth((z-28)/55))}
+};
+const scenarioCache=new Map();
+function roadFor(name='soft'){
+ if(scenarioCache.has(name))return scenarioCache.get(name);
+ const f=shape[name];if(!f)throw Error('Tuntematon koe: '+name);
+ const levels=[];
+ for(let i=0;i<=Math.round((Z1-Z0)/DZ);i++){
+  const z=Z0+i*DZ,cx=f.cx(z),der=f.dx(z),n=1/Math.hypot(1,der);
+  const row={z,cx,der,nx:n,nz:-der*n,y:f.height(z),bank:f.bank(z)};
+  row.vertex=offset=>[row.cx+row.nx*offset,row.y+row.bank*offset,row.z+row.nz*offset];
+  row.left=row.vertex(-HALF);row.right=row.vertex(HALF);
+  levels.push(row);
+ }
+ // Height lookup is barycentric interpolation of the EXACT road mesh triangles.
+ // The renderer draws the same triangles (no independently sampled visual road).
+ const bary=(a,b,c,x,z)=>{
+  const det=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);
+  if(Math.abs(det)<1e-10)return null;
+  const w1=((b[2]-c[2])*(x-c[0])+(c[0]-b[0])*(z-c[2]))/det;
+  const w2=((c[2]-a[2])*(x-c[0])+(a[0]-c[0])*(z-c[2]))/det;
+  const w3=1-w1-w2;
+  if(w1<-.000005||w2<-.000005||w3<-.000005)return null;
+  return {y:a[1]*w1+b[1]*w2+c[1]*w3,weights:[w1,w2,w3]};
+ };
+ function query(x,z){
+  const start=clamp(Math.floor((z-Z0)/DZ),0,levels.length-2);
+  for(let delta=0;delta<=13;delta++)for(const idx of delta===0?[start]:[start-delta,start+delta]){
+   if(idx<0||idx>=levels.length-1)continue;
+   const a=levels[idx],b=levels[idx+1];
+   // match renderer.meshBuilder.quad: tri(A,C,B) and tri(A,D,C)
+   let t=bary(a.left,b.right,a.right,x,z);
+   if(!t)t=bary(a.left,b.left,b.right,x,z);
+   if(t)return {...t,inside:true,segment:idx};
+  }
+  // Outside the road, no wheel support. This is NOT silently clamped onto it.
+  return {y:null,inside:false,segment:-1};
+ }
+ function centerY(z){const c=f.cx(z);const hit=query(c,z);return hit.inside?hit.y:f.height(clamp(z,Z0,Z1));}
+ function slope(z){return (centerY(z+.45)-centerY(z-.45))/.90;}
+ const out={name,levels,Z0,Z1,DZ,ROAD_HALF:HALF,centerX:f.cx,derivative:f.dx,surface:(x,z)=>query(x,z).y,query,centerY,slope,bank:f.bank,rowAt:z=>levels[clamp(Math.round((z-Z0)/DZ),0,levels.length-1)]};
+ scenarioCache.set(name,out);return out;
+}
+const MASS=930,GRAV=9.81,K=37000,C=3900,REST=.43,MAX_LEN=.74,RADIUS=.48,MOUNT=-.18;
+const PITCH_INERTIA=1840,ROLL_INERTIA=1460;
+const WHEELS=[{side:-1.47,front:-2.2},{side:1.47,front:-2.2},{side:-1.47,front:2.2},{side:1.47,front:2.2}];
+const DT=1/120;
+function fresh({scenario='soft',speed=150,reverse=false}={}){
+ const road=roadFor(scenario),dir=reverse?-1:1,z=reverse?126:-126;
+ const vel=speed/(3.6*.8),slope=road.slope(z),bank=road.bank(z),cx=road.centerX(z);
+ return {scenario,displaySpeed:speed,reverse,road,dir,speed:vel,x:cx,z,
+  heading:Math.atan(road.derivative(z))+(reverse?Math.PI:0),
+  y:road.centerY(z)+1.08,vy:slope*vel*dir,pitch:-Math.atan(slope)*dir,roll:Math.atan(bank),pitchV:0,rollV:0,
+  contacts:4,forces:[0,0,0,0],wheelCenters:[0,0,0,0],wheelLengths:[REST,REST,REST,REST],
+  takeoffs:0,landings:0,maxGap:0,airSeconds:0,currentAirSeconds:0,maxAirDuration:0,totalSeconds:0,
+  takeoffTime:null,lastLandingTime:null,airborne:false,landed:false,
+  maxForce:0,minPenetration:0,maxPitch:0,maxRoll:0,history:[]};
+}
+function step(s){
+ const {road}=s;
+ const forwardX=Math.sin(s.heading),forwardZ=Math.cos(s.heading),rightX=Math.cos(s.heading),rightZ=-Math.sin(s.heading);
+ let total=-MASS*GRAV,torquePitch=-s.pitchV*PITCH_INERTIA*1.55,torqueRoll=-s.rollV*ROLL_INERTIA*1.75,contacts=0;
+ const dTravel=s.speed*s.dir*DT;
+ let wheelLowest=0;
+ for(let i=0;i<WHEELS.length;i++){
+  const w=WHEELS[i],f=w.front,wx=s.x+w.side*rightX+f*forwardX,wz=s.z+w.side*rightZ+f*forwardZ;
+  const ground=road.query(wx,wz);
+  const mount=s.y+MOUNT*Math.cos(s.pitch)*Math.cos(s.roll)+w.side*Math.sin(s.roll)-f*Math.sin(s.pitch);
+  const length=ground.inside?mount-ground.y-RADIUS:MAX_LEN+1;
+  const groundNext=ground.inside?road.query(wx+road.derivative(s.z)*dTravel,wz+dTravel):null;
+  const groundV=groundNext?.inside?(groundNext.y-ground.y)/DT:0;
+  const mountV=s.vy+w.side*s.rollV-f*s.pitchV;
+  let force=0;
+  if(ground.inside&&length<REST){
+   force=clamp(K*(REST-length)-C*(mountV-groundV),0,81000);
+   if(force>.5)contacts++;
+  }
+  total+=force;torquePitch-=f*force;torqueRoll+=w.side*force;
+  s.forces[i]=force;s.wheelLengths[i]=clamp(length,.06,MAX_LEN);
+  s.wheelCenters[i]=mount-s.wheelLengths[i];
+  if(ground.inside)wheelLowest=Math.min(wheelLowest,s.wheelCenters[i]-RADIUS-ground.y);
+  s.maxForce=Math.max(s.maxForce,force);
+ }
+ const was=s.airborne;
+ s.contacts=contacts;
+ // Suppress zero-load oscillation while every wheel remains near the road.
+ // Takeoff requires both loss of tyre support and measurable clearance.
+ const centerGap=Math.max(0,s.y-1.08-road.centerY(s.z));
+ s.airborne=contacts===0&&centerGap>.045;
+ if(s.airborne){s.airSeconds+=DT;s.currentAirSeconds+=DT;if(!was){s.takeoffs++;s.takeoffTime=s.totalSeconds;}}
+ else{if(was){s.landings++;s.lastLandingTime=s.totalSeconds;s.maxAirDuration=Math.max(s.maxAirDuration,s.currentAirSeconds);s.landed=true;}s.currentAirSeconds=0;}
+ s.minPenetration=Math.min(s.minPenetration,wheelLowest);
+ const roadY=road.centerY(s.z);
+ const gap=Math.max(0,s.y-1.08-roadY);
+ s.maxGap=Math.max(s.maxGap,gap);
+ s.vy+=total/MASS*DT;s.y+=s.vy*DT;
+ s.pitchV=clamp(s.pitchV+torquePitch/PITCH_INERTIA*DT,-2.6,2.6);
+ s.rollV=clamp(s.rollV+torqueRoll/ROLL_INERTIA*DT,-2.6,2.6);
+ s.pitch=clamp(s.pitch+s.pitchV*DT,-.7,.7);
+ s.roll=clamp(s.roll+s.rollV*DT,-.55,.55);
+ s.maxPitch=Math.max(s.maxPitch,Math.abs(s.pitch));s.maxRoll=Math.max(s.maxRoll,Math.abs(s.roll));
+ s.z+=s.dir*s.speed*DT;
+ s.x=road.centerX(s.z); // scripted line for ISOLATED body test, not steering physics
+ s.heading=Math.atan(road.derivative(s.z))+(s.reverse?Math.PI:0);
+ s.totalSeconds+=DT;
+ return s;
+}
+function simulate(scenario='soft',speed=150,reverse=false,maxSeconds=18){
+ const s=fresh({scenario,speed,reverse});
+ for(let i=0;i<Math.floor(maxSeconds/DT);i++){
+  step(s);
+  if(i%12===0)s.history.push({t:s.totalSeconds,z:s.z,x:s.x,gap:s.y-1.08-s.road.centerY(s.z),pitch:s.pitch,roll:s.roll,contacts:s.contacts});
+  if(Math.abs(s.z)>177)break;
+ }
+ s.maxAirDuration=Math.max(s.maxAirDuration,s.currentAirSeconds);
+ return s;
+}
+const road=roadFor('soft');
+return {settings,road,roadFor,fresh,step,simulate,dt:DT,physics:{MASS,GRAV,K,C,REST,MAX_LEN,RADIUS,MOUNT,WHEELS}};
+});
+</script>
+<script>
+
+/* GOPs Rally — native WebGL2 3D scene, no CDN or runtime dependencies.
+ * Terrain, banked road, vegetation, chassis and four independent wheels use real 3D geometry.
+ * Arcade dynamics remain the responsibility of game.js; suspension is a visual response model.
+ */
+(() => {
+'use strict';
+const canvas = document.getElementById('scene3d');
+const forceCanvas = false;
+const gl = forceCanvas ? null : canvas?.getContext('webgl2', {antialias:false,alpha:false,powerPreference:'high-performance'});
+if (!gl) { document.documentElement.classList.add('no-webgl'); return; }
+const vs = `#version 300 es
+precision highp float;
+in vec3 aPos; in vec3 aNormal; in vec3 aColor;
+uniform mat4 uProj,uView,uModel;
+out vec3 vColor; out float vFog;
+void main(){
+ vec4 eye=uView*uModel*vec4(aPos,1.);
+ vec3 n=normalize(mat3(uModel)*aNormal);
+ float sun=max(.0,dot(n,normalize(vec3(-.44,.88,.19))));
+ vColor=aColor*(.60+.40*sun);
+ vFog=clamp((-eye.z-125.)/490.,0.,.48);
+ gl_Position=uProj*eye;
+}`;
+const fs = `#version 300 es
+precision mediump float;
+in vec3 vColor; in float vFog; out vec4 frag;
+void main(){ frag=vec4(mix(vColor,vec3(.23,.31,.27),vFog),1.); }`;
+function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
+let program;
+try {program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vs));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));}
+catch(e){console.error('WebGL2 initialization failed',e);document.documentElement.classList.add('fallback-2d');return;}
+const loc={pos:gl.getAttribLocation(program,'aPos'),normal:gl.getAttribLocation(program,'aNormal'),color:gl.getAttribLocation(program,'aColor'),projection:gl.getUniformLocation(program,'uProj'),view:gl.getUniformLocation(program,'uView'),model:gl.getUniformLocation(program,'uModel')};
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const V=(x,y,z)=>[x,y,z];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const norm=a=>{const d=Math.hypot(...a)||1;return a.map(x=>x/d);};
+function identity(){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);}
+function multiply(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o;}
+function translate(x,y,z){const m=identity();m[12]=x;m[13]=y;m[14]=z;return m;}
+function yaw(t){const m=identity(),c=Math.cos(t),s=Math.sin(t);m[0]=c;m[2]=-s;m[8]=s;m[10]=c;return m;}
+function roll(t){const m=identity(),c=Math.cos(t),s=Math.sin(t);m[0]=c;m[1]=s;m[4]=-s;m[5]=c;return m;}
+function pitch(t){const m=identity(),c=Math.cos(t),s=Math.sin(t);m[5]=c;m[6]=s;m[9]=-s;m[10]=c;return m;}
+function ortho(left,right,bottom,top,near,far){const m=identity();m[0]=2/(right-left);m[5]=2/(top-bottom);m[10]=-2/(far-near);m[12]=-(right+left)/(right-left);m[13]=-(top+bottom)/(top-bottom);m[14]=-(far+near)/(far-near);return m;}
+function lookAt(eye,target){const z=norm(sub(eye,target)),x=norm(cross([0,1,0],z)),y=cross(z,x);const m=identity();m[0]=x[0];m[4]=x[1];m[8]=x[2];m[1]=y[0];m[5]=y[1];m[9]=y[2];m[2]=z[0];m[6]=z[1];m[10]=z[2];m[12]=-x[0]*eye[0]-x[1]*eye[1]-x[2]*eye[2];m[13]=-y[0]*eye[0]-y[1]*eye[1]-y[2]*eye[2];m[14]=-z[0]*eye[0]-z[1]*eye[1]-z[2]*eye[2];return m;}
+function meshBuilder(){const data=[];
+ function tri(a,b,c,color){const n=norm(cross(sub(b,a),sub(c,a)));for(const p of [a,b,c])data.push(...p,...n,...color);}
+ function quad(a,b,c,d,color){tri(a,c,b,color);tri(a,d,c,color);}
+ function box(cx,cy,cz,w,h,d,color){const x=cx-w/2,X=cx+w/2,y=cy-h/2,Y=cy+h/2,z=cz-d/2,Z=cz+d/2;
+ const A=[x,y,z],B=[X,y,z],C=[X,Y,z],D=[x,Y,z],E=[x,y,Z],F=[X,y,Z],G=[X,Y,Z],H=[x,Y,Z];
+ quad(A,B,C,D,color);quad(F,E,H,G,color);quad(E,A,D,H,color);quad(B,F,G,C,color);quad(D,C,G,H,color);quad(E,F,B,A,color);
+ }
+ return {data,tri,quad,box};}
+function gpu(builder,dynamic=false){const vao=gl.createVertexArray(),buf=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(builder.data),dynamic?gl.DYNAMIC_DRAW:gl.STATIC_DRAW);
+ const stride=9*4;for(const [idx,offset] of [[loc.pos,0],[loc.normal,12],[loc.color,24]]){gl.enableVertexAttribArray(idx);gl.vertexAttribPointer(idx,3,gl.FLOAT,false,stride,offset);}gl.bindVertexArray(null);return {vao,buf,count:builder.data.length/9};}
+const P=window.CrestProof;
+const colors={
+ road:[.56,.47,.36],road2:[.66,.56,.43],edge:[.36,.29,.23],soil:[.27,.36,.24],soil2:[.31,.39,.27],
+ car:[.96,.29,.12],hood:[.98,.54,.12],roof:[.98,.91,.70],glass:[.10,.22,.28],rubber:[.065,.07,.07],stripe:[.94,.91,.71]
+};
+function makeTerrain(roadModel){
+ const road=meshBuilder(),outer=meshBuilder();
+ const rows=roadModel.levels,n=rows.length,half=roadModel.ROAD_HALF;
+ // Same triangle vertices as roadModel.query: physics and pixels share the
+ // precise piecewise-planar banked/curved surface.
+ for(let i=0;i<n-1;i++){
+  const a=rows[i],b=rows[i+1];
+  road.quad(a.left,a.right,b.right,b.left,colors.road);
+  for(const side of [-1,1]){
+   const edge=side<0?'left':'right',beyond=side*18;
+   const outerA=a.vertex(beyond),outerB=b.vertex(beyond);
+   const v=(p)=>[p[0],p[1]-3.5,p[2]];
+   outer.quad(a[edge],v(outerA),v(outerB),b[edge],colors.soil);
+  }
+ }
+ return [gpu(outer),gpu(road)];
+}
+const car=meshBuilder();
+car.box(0,-.10,0,3.45,.73,5.80,colors.car);
+car.box(0,.41,1.75,3.13,.23,1.54,colors.hood);
+car.box(0,.82,-.30,2.65,.49,2.85,colors.roof);
+car.box(0,.58,1.06,2.53,.26,.32,colors.glass);
+car.box(0,.61,-1.51,2.53,.20,.25,colors.glass);
+for(const side of [-1,1]){car.box(side*1.48,-.09,-1.9,.24,.21,.30,colors.stripe);car.box(side*1.43,-.03,2.7,.25,.16,.17,[.95,.88,.64]);}
+const wheel=meshBuilder(); wheel.box(0,0,0,.82,.95,1.21,colors.rubber);wheel.box(-.43,0,0,.07,.62,.72,[.37,.41,.42]);
+const shadow=meshBuilder();
+shadow.quad([-2,0,-3.25],[2,0,-3.25],[2,0,3.25],[-2,0,3.25],[.20,.18,.17]);
+let world=[],activeScenario='';const carGpu=gpu(car),wheelGpu=gpu(wheel),shadowGpu=gpu(shadow);
+function perspective(fovy,aspect,near,far){const f=1/Math.tan(fovy/2);const m=new Float32Array(16);m[0]=f/aspect;m[5]=f;m[10]=(far+near)/(near-far);m[11]=-1;m[14]=2*far*near/(near-far);return m;}
+const renderObj={lastGlError:0};
+let cameraX=0,cameraZ=0,cameraY=0,initialized=false;
+function resetCamera(s){cameraX=s.x;cameraZ=s.z;cameraY=s.road.centerY(s.z);initialized=true;}
+function render(s,elapsed){
+ if(activeScenario!==s.scenario){
+  for(const m of world){gl.deleteBuffer(m.buf);gl.deleteVertexArray(m.vao);}
+  world=makeTerrain(s.road);activeScenario=s.scenario;initialized=false;
+ }
+ const W=window.innerWidth,H=window.innerHeight,dpr=Math.min(window.devicePixelRatio||1,1.50);
+ const dw=Math.round(W*dpr),dh=Math.round(H*dpr);
+ if(canvas.width!==dw||canvas.height!==dh){canvas.width=dw;canvas.height=dh;}
+ gl.viewport(0,0,dw,dh);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);
+ gl.clearColor(.14,.22,.19,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ if(!initialized){cameraX=s.x;cameraZ=s.z;cameraY=s.road.centerY(s.z);initialized=true;}
+ const follow=1-Math.exp(-Math.min(elapsed||0,.05)*12);
+ cameraX+=(s.x-cameraX)*follow;cameraZ+=(s.z-cameraZ)*follow;
+ // Camera follows the *road*, not car height. This preserves visible flight gap.
+ const groundY=s.road.centerY(cameraZ);
+ cameraY+=(groundY-cameraY)*(1-Math.exp(-Math.min(elapsed||0,.05)*2.0));
+ const sign=s.dir;
+ const eye=[cameraX+10,cameraY+20,cameraZ-sign*43];
+ const target=[cameraX,cameraY+2,cameraZ+sign*22];
+ const view=lookAt(eye,target),proj=perspective((H>W?48:54)*Math.PI/180,W/H,.5,800);
+ gl.useProgram(program);gl.uniformMatrix4fv(loc.projection,false,proj);gl.uniformMatrix4fv(loc.view,false,view);
+ const I=identity();for(const m of world){gl.uniformMatrix4fv(loc.model,false,I);gl.bindVertexArray(m.vao);gl.drawArrays(gl.TRIANGLES,0,m.count);}
+ function draw(m,mat){gl.uniformMatrix4fv(loc.model,false,mat);gl.bindVertexArray(m.vao);gl.drawArrays(gl.TRIANGLES,0,m.count);}
+ // Real ground shadow at the ground surface. It is NOT a height animation.
+ const shadowMat=multiply(multiply(translate(s.x,s.road.centerY(s.z)+.065,s.z),yaw(s.heading)),roll(Math.atan(s.road.bank(s.z))));draw(shadowGpu,shadowMat);
+ // Every vehicle component uses the same rigid-body pose.
+ const pose=multiply(multiply(multiply(translate(s.x,s.y,s.z),yaw(s.heading)),roll(s.roll)),pitch(s.pitch));
+ draw(carGpu,pose);
+ for(let i=0;i<P.physics.WHEELS.length;i++){
+  const w=P.physics.WHEELS[i],ly=P.physics.MOUNT-s.wheelLengths[i];
+  draw(wheelGpu,multiply(pose,translate(w.side,ly,w.front)));
+ }
+ gl.bindVertexArray(null);
+ renderObj.lastGlError=gl.getError();
+}
+window.CrestRender={render,resetCamera,stats:renderObj};document.documentElement.classList.add('webgl-ready');
+})();
+</script>
+<script>(() => {
+'use strict';
+const P=window.CrestProof,el=id=>document.getElementById(id);
+let scenario='jump',speed=150,reverse=false,state=P.fresh({scenario,speed,reverse}),running=false,prev=performance.now(),acc=0;
+let frameSeconds=0,frames=0,fps=0,displayTimer=0;
+const ctx=el('profile').getContext('2d');
+function syncButtons(){for(const b of document.querySelectorAll('[data-scenario]'))b.classList.toggle('chosen',b.dataset.scenario===scenario);
+ for(const b of document.querySelectorAll('[data-speed]'))b.classList.toggle('chosen',Number(b.dataset.speed)===speed);
+ for(const b of document.querySelectorAll('[data-direction]'))b.classList.toggle('chosen',(b.dataset.direction==='reverse')===reverse);}
+function reset(){running=false;state=P.fresh({scenario,speed,reverse});window.CrestRender?.resetCamera?.(state);
+ acc=0;prev=performance.now();el('start').textContent='START';
+ el('result').textContent=P.settings[scenario].detail;syncButtons();updateLabels();drawProfile();}
+function choose(options){
+ if(options.scenario)scenario=options.scenario;
+ if(options.speed)speed=options.speed;
+ if(typeof options.reverse==='boolean')reverse=options.reverse;
+ reset();}
+function start(){reset();running=true;el('start').textContent='AJOSSA';}
+function stop(){running=false;el('start').textContent='START AGAIN';
+ const s=state;
+ el('result').textContent=s.takeoffs
+   ?`Hyppyjä ${s.takeoffs} · laskeutumisia ${s.landings} · lento ${s.airSeconds.toFixed(2)} s · max ${s.maxGap.toFixed(2)} m`
+   :`Ei hyppyä · enimmäisroll ${(s.maxRoll*180/Math.PI).toFixed(1)}° · pyöräkontaktit säilyivät`;}
+for(const b of document.querySelectorAll('[data-scenario]'))b.addEventListener('click',()=>choose({scenario:b.dataset.scenario}));
+for(const b of document.querySelectorAll('[data-speed]'))b.addEventListener('click',()=>choose({speed:Number(b.dataset.speed)}));
+for(const b of document.querySelectorAll('[data-direction]'))b.addEventListener('click',()=>choose({reverse:b.dataset.direction==='reverse'}));
+el('start').addEventListener('click',start);el('reset').addEventListener('click',reset);
+window.addEventListener('keydown',e=>{if(e.code==='Enter'||e.code==='KeyR')start();});
+function updateLabels(){const road=state.road;
+ const gap=Math.max(0,state.y-1.08-road.centerY(state.z));
+ el('state').textContent=state.airborne?'ILMASSA':'TIELLÄ';el('state').dataset.air=state.airborne?'yes':'no';
+ el('gap').textContent=gap.toFixed(2)+' m';el('contacts').textContent=String(state.contacts)+'/4';
+ el('air').textContent=state.airSeconds.toFixed(2)+' s';el('speed').textContent=String(state.displaySpeed);
+ el('pitch').textContent=(state.pitch*180/Math.PI).toFixed(1)+'°';
+ el('roll').textContent=(state.roll*180/Math.PI).toFixed(1)+'°';el('fps').textContent=window.CrestRender?String(Math.round(fps)):'–';}
+function drawProfile(){const c=el('profile'),w=c.width,h=c.height,road=state.road;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle='#0d201d';ctx.fillRect(0,0,w,h);
+ const span=state.scenario==='jump'?94:112,from=state.z-span/2,to=state.z+span/2;
+ const Y=(y)=>h*.70-(y-road.centerY(state.z))*2.4;
+ const X=(z)=>(z-from)/span*w;
+ ctx.strokeStyle='#9eac93';ctx.lineWidth=2;ctx.beginPath();
+ for(let i=0;i<=130;i++){const z=from+span*i/130,pt=[X(z),Y(road.centerY(z))];if(i===0)ctx.moveTo(...pt);else ctx.lineTo(...pt);}ctx.stroke();
+ const carY=Y(state.y);ctx.fillStyle='#f7a458';ctx.fillRect(w/2-7,carY-3,14,6);
+ ctx.fillStyle='#cad4c7';ctx.font='9px system-ui';
+ ctx.fillText(state.scenario==='bank'?'KAAREVA TIE · CAMBER KORISSA':'TIEN PITUUSPROFIILI + AUTON KORKEUS',7,13);
+}
+function tick(now){const dt=Math.min(.045,Math.max(0,(now-prev)/1000||0));prev=now;
+ if(running){acc+=dt;let steps=0;
+  while(acc>=P.dt&&steps++<7){P.step(state);acc-=P.dt;}
+  if(Math.abs(state.z)>177)stop();
+ }
+ if(window.CrestRender)window.CrestRender.render(state,dt);
+ frameSeconds+=dt;frames++;
+ if(frameSeconds>=.5){fps=frames/frameSeconds;frameSeconds=0;frames=0;}
+ displayTimer+=dt;if(displayTimer>.1){displayTimer=0;updateLabels();drawProfile();}
+ requestAnimationFrame(tick);
+}
+window.GOPS_ROADLAB={getSnapshot:()=>({scenario,speed,reverse,airborne:state.airborne,contacts:state.contacts,takeoffs:state.takeoffs,landings:state.landings,maxGap:state.maxGap,maxAirDuration:state.maxAirDuration,airSeconds:state.airSeconds,roll:state.roll,pitch:state.pitch,z:state.z,x:state.x,fps,renderer:!!window.CrestRender,glError:window.CrestRender?.stats.lastGlError||0}),start,reset,choose,stepN:n=>{for(let i=0;i<n;i++)P.step(state);updateLabels();drawProfile();}};
+reset();requestAnimationFrame(tick);
+const params=new URLSearchParams(location.search);
+if(params.has('auto')){choose({scenario:P.settings[params.get('auto')]?params.get('auto'):'jump',speed:[65,150,195].includes(+params.get('speed'))?+params.get('speed'):150,reverse:params.get('direction')==='reverse'});start();}
+})();</script>
+</body></html>
